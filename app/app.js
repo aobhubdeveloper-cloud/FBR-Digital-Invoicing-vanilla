@@ -1,4 +1,5 @@
 // DOMPurify is loaded globally via CDN and helps prevent XSS attacks
+
 // DOMPurify is a library that helps prevent XSS attacks by sanitizing HTML and preventing script injection
 
 let hsCodes = []
@@ -18,6 +19,304 @@ let currentEditingInvoice = null
 let originalInvoiceState = null
 let initialAppState = null
 let grandTotal = 0
+
+// === Custom Confirm Modal ===
+function customConfirm(options) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal');
+    const icon = document.getElementById('confirmIcon');
+    const title = document.getElementById('confirmTitle');
+    const subtitle = document.getElementById('confirmSubtitle');
+    const message = document.getElementById('confirmMessage');
+    const confirmBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+    
+    // Set content
+    title.textContent = options.title || 'Confirm Action';
+    subtitle.textContent = options.subtitle || 'Are you sure you want to proceed?';
+    message.textContent = options.message || 'This action cannot be undone.';
+    
+    // Set icon and button style based on type
+    const type = options.type || 'warning';
+    icon.className = `icon ${type}`;
+    confirmBtn.className = `btn btn-confirm ${type === 'info' ? 'info' : ''}`;
+    
+    if (type === 'danger') {
+      icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+      confirmBtn.textContent = options.confirmText || 'Delete';
+    } else if (type === 'info') {
+      icon.innerHTML = '<i class="fas fa-info-circle"></i>';
+      confirmBtn.textContent = options.confirmText || 'Confirm';
+    } else {
+      icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+      confirmBtn.textContent = options.confirmText || 'Confirm';
+    }
+    
+    cancelBtn.textContent = options.cancelText || 'Cancel';
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Handle clicks
+    const handleConfirm = () => {
+      modal.classList.remove('show');
+      cleanup();
+      resolve(true);
+    };
+    
+    const handleCancel = () => {
+      modal.classList.remove('show');
+      cleanup();
+      resolve(false);
+    };
+    
+    const handleClickOutside = (e) => {
+      if (e.target === modal) {
+        handleCancel();
+      }
+    };
+    
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        handleCancel();
+      }
+    };
+    
+    const cleanup = () => {
+      confirmBtn.removeEventListener('click', handleConfirm);
+      cancelBtn.removeEventListener('click', handleCancel);
+      modal.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+    
+    // Add event listeners
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    modal.addEventListener('click', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+  });
+}
+
+// Export functions for each table type
+function exportInvoices(format) {
+  if (typeof exportData === 'function') {
+    exportData(STORE_NAMES.invoices, format);
+  } else {
+    console.warn('Export function not available');
+  }
+}
+
+function exportProducts(format) {
+  if (typeof exportData === 'function') {
+    exportData(STORE_NAMES.products, format);
+  } else {
+    console.warn('Export function not available');
+  }
+}
+
+function exportSellers(format) {
+  if (typeof exportData === 'function') {
+    exportData(STORE_NAMES.sellers, format);
+  } else {
+    console.warn('Export function not available');
+  }
+}
+
+function exportBuyers(format) {
+  if (typeof exportData === 'function') {
+    exportData(STORE_NAMES.buyers, format);
+  } else {
+    console.warn('Export function not available');
+  }
+}
+
+// Custom confirm functions for delete actions
+async function confirmDeleteSeller(ntn) {
+  const confirmed = await customConfirm({
+    type: 'danger',
+    title: 'Delete Seller',
+    subtitle: 'Are you sure you want to delete this seller?',
+    message: 'This action cannot be undone. All data associated with this seller will be permanently removed.',
+    confirmText: 'Delete',
+    cancelText: 'Cancel'
+  });
+  
+  if (confirmed) {
+    deleteSeller(ntn);
+  }
+}
+
+async function confirmDeleteBuyer(ntn) {
+  const confirmed = await customConfirm({
+    type: 'danger',
+    title: 'Delete Buyer',
+    subtitle: 'Are you sure you want to delete this buyer?',
+    message: 'This action cannot be undone. All data associated with this buyer will be permanently removed.',
+    confirmText: 'Delete',
+    cancelText: 'Cancel'
+  });
+  
+  if (confirmed) {
+    deleteBuyer(ntn);
+  }
+}
+
+async function confirmDeleteProduct(id) {
+  const confirmed = await customConfirm({
+    type: 'danger',
+    title: 'Delete Product',
+    subtitle: 'Are you sure you want to delete this product?',
+    message: 'This action cannot be undone. All data associated with this product will be permanently removed.',
+    confirmText: 'Delete',
+    cancelText: 'Cancel'
+  });
+  
+  if (confirmed) {
+    deleteProduct(id);
+  }
+}
+
+async function confirmDeleteInvoice(id) {
+  const confirmed = await customConfirm({
+    type: 'danger',
+    title: 'Delete Invoice',
+    subtitle: 'Are you sure you want to delete this invoice?',
+    message: 'This action cannot be undone. The invoice will be permanently removed from your records.',
+    confirmText: 'Delete',
+    cancelText: 'Cancel'
+  });
+  
+  if (confirmed) {
+    deleteInvoice(id);
+  }
+}
+
+// Make functions globally available
+window.confirmDeleteSeller = confirmDeleteSeller;
+window.confirmDeleteBuyer = confirmDeleteBuyer;
+window.confirmDeleteProduct = confirmDeleteProduct;
+window.confirmDeleteInvoice = confirmDeleteInvoice;
+window.exportInvoices = exportInvoices;
+window.exportProducts = exportProducts;
+window.exportSellers = exportSellers;
+window.exportBuyers = exportBuyers;
+
+// Make console logging functions globally available
+window.toggleConsoleLogging = toggleConsoleLogging;
+window.isConsoleLoggingEnabled = () => isConsoleLoggingEnabled;
+window.loadConsoleLoggingSetting = loadConsoleLoggingSetting;
+window.saveConsoleLoggingSetting = saveConsoleLoggingSetting;
+window.updateLoaderStatus = updateLoaderStatus;
+window.updateLoaderProgress = updateLoaderProgress;
+window.hideLoader = hideLoader;
+window.showLoader = showLoader;
+window.setBackupLoaderTimer = setBackupLoaderTimer;
+window.forceRemoveLoader = forceRemoveLoader;
+window.debugLoaderStatus = debugLoaderStatus;
+window.forceThemeRefresh = forceThemeRefresh;
+
+// === App Loader Functions ===
+let loaderTimeout;
+let backupLoaderTimeout;
+
+// Set a backup timer to hide loader after maximum 3 seconds
+function setBackupLoaderTimer() {
+  backupLoaderTimeout = setTimeout(() => {
+    console.warn('Backup timer: Force hiding loader after 3 seconds');
+    forceRemoveLoader();
+  }, 3000);
+}
+
+function updateLoaderStatus(status) {
+  const statusElement = document.getElementById('loaderStatus');
+  if (statusElement) {
+    statusElement.textContent = status;
+  }
+}
+
+function updateLoaderProgress(percentage) {
+  const progressBar = document.querySelector('.loader-progress-bar');
+  if (progressBar) {
+    progressBar.style.width = percentage + '%';
+  }
+}
+
+function hideLoader() {
+  const loader = document.getElementById('appLoader');
+  if (loader) {
+    console.log('Hiding loader...');
+    // Add hidden class for fade out animation
+    loader.classList.add('hidden');
+    
+    // Also immediately set display none to ensure it's hidden
+    loader.style.display = 'none';
+    
+    // Remove loader from DOM after animation completes
+    setTimeout(() => {
+      if (loader && loader.parentNode) {
+        loader.parentNode.removeChild(loader);
+        console.log('App loader removed successfully');
+      }
+    }, 100); // Reduced timeout for faster removal
+  }
+  
+  // Clear any pending timeouts
+  if (loaderTimeout) {
+    clearTimeout(loaderTimeout);
+    loaderTimeout = null;
+  }
+  if (backupLoaderTimeout) {
+    clearTimeout(backupLoaderTimeout);
+    backupLoaderTimeout = null;
+  }
+}
+
+// Force remove loader immediately (emergency function)
+function forceRemoveLoader() {
+  const loader = document.getElementById('appLoader');
+  if (loader) {
+    console.log('Force removing loader...');
+    loader.style.display = 'none';
+    loader.style.visibility = 'hidden';
+    loader.style.opacity = '0';
+    if (loader.parentNode) {
+      loader.parentNode.removeChild(loader);
+      console.log('Loader force removed from DOM');
+    }
+  }
+  
+  // Clear all timers
+  if (loaderTimeout) {
+    clearTimeout(loaderTimeout);
+    loaderTimeout = null;
+  }
+  if (backupLoaderTimeout) {
+    clearTimeout(backupLoaderTimeout);
+    backupLoaderTimeout = null;
+  }
+}
+
+// Debug function to check loader status
+function debugLoaderStatus() {
+  const loader = document.getElementById('appLoader');
+  console.log('=== Loader Debug Info ===');
+  console.log('Loader element exists:', !!loader);
+  if (loader) {
+    console.log('Loader display style:', loader.style.display);
+    console.log('Loader visibility:', loader.style.visibility);
+    console.log('Loader opacity:', loader.style.opacity);
+    console.log('Loader classes:', loader.className);
+    console.log('Loader z-index:', getComputedStyle(loader).zIndex);
+  }
+  console.log('=== End Debug Info ===');
+}
+
+function showLoader() {
+  const loader = document.getElementById('appLoader');
+  if (loader) {
+    loader.classList.remove('hidden');
+  }
+}
 
 
 // === IndexedDB Utility ===
@@ -145,8 +444,8 @@ async function dbSetAll(store, items) {
 // === Migrate localStorage data to IndexedDB on first load ===
 async function migrateLocalStorageToIndexedDB() {
   const stores = [
-    { key: 'fbrSellers', store: STORE_NAMES.sellers, default: typeof defaultSellers !== 'undefined' ? defaultSellers : [] },
-    { key: 'fbrBuyers', store: STORE_NAMES.buyers, default: typeof defaultBuyers !== 'undefined' ? defaultBuyers : [] },
+    { key: 'fbrSellers', store: STORE_NAMES.sellers, default: [] }, // Commented out defaultSellers
+    { key: 'fbrBuyers', store: STORE_NAMES.buyers, default: [] }, // Commented out defaultBuyers
     { key: 'fbrInvoices', store: STORE_NAMES.invoices, default: [] },
     { key: 'fbrPreferences', store: STORE_NAMES.preferences, default: [] },
     { key: 'fbrProducts', store: STORE_NAMES.products, default: [] },
@@ -216,6 +515,10 @@ const DOMElements = {
   successModal: document.getElementById("successModal"),
    closeSuccessModal: document.getElementById("closeSuccessModal"),
   closeSuccessModalBtn: document.getElementById("closeSuccessModalBtn"),
+  errorModal: document.getElementById("errorModal"),
+  closeErrorModal: document.getElementById("closeErrorModal"),
+  closeErrorModalBtn: document.getElementById("closeErrorModalBtn"),
+  retrySubmissionBtn: document.getElementById("retrySubmissionBtn"),
   previewModal: document.getElementById("previewModal"),
   closePreviewModal: document.getElementById("closePreviewModal"),
   closePreviewModalBtn: document.getElementById("closePreviewModalBtn"),
@@ -275,7 +578,12 @@ viewJsonBtn.innerHTML = '<i class="fas fa-code"></i> View JSON';
 // Insert the button before the download button
 const previewFooter = document.querySelector('#previewModal .modal-footer');
 if (previewFooter) {
-  previewFooter.insertBefore(viewJsonBtn, previewFooter.firstChild);
+  // Insert at the beginning if there are children, otherwise just append
+  if (previewFooter.firstElementChild) {
+    previewFooter.insertBefore(viewJsonBtn, previewFooter.firstElementChild);
+  } else {
+    previewFooter.appendChild(viewJsonBtn);
+  }
 }
 
 // Handle preview modal close
@@ -318,7 +626,7 @@ viewJsonBtn.addEventListener('click', () => {
     
     invoicePreview.innerHTML = `<div style="padding: 20px;">
       <h3>Invoice Data (JSON View)</h3>
-      <pre style="white-space: pre-wrap; word-wrap: break-word; background: #f8f9fa; padding: 15px; border-radius: 4px; max-height: 70vh; overflow-y: auto;">
+      <pre style="white-space: pre-wrap; word-wrap: break-word; padding: 15px; border-radius: 4px; max-height: 70vh; overflow-y: auto;">
 ${JSON.stringify(invoiceData, null, 2)}
       </pre>
     </div>`;
@@ -933,7 +1241,7 @@ const defaultProvinces = [
   { stateProvinceCode: 9, stateProvinceDesc: "GILGIT BALTISTAN" },
 ]
 
-// API URLs with environment distinction
+// API URLs with environment distinction (PRAL Digital Invoicing API v1.12 & v1.6)
 const API_URLS = {
   validate: {
     sandbox: "https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb",
@@ -955,65 +1263,14 @@ const API_URLS = {
   SROItem: "https://gw.fbr.gov.pk/pdi/v2/SROItem",
   statl: "https://gw.fbr.gov.pk/dist/v1/statl",
   getRegType: "https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type",
+  invoiceStatus: {
+    sandbox: "https://gw.fbr.gov.pk/di_data/v1/di/getinvoicedata_sb",
+    production: "https://gw.fbr.gov.pk/di_data/v1/di/getinvoicedata",
+  }
 };
 
 
 // Default data
-const defaultSellers = [
-  {
-    id: "hussaini",
-    businessName: "HUSSAINI LOGISTICS ENTERPRISES (PRIVATE) LIMITED",
-    ntn: "7908224",
-    address: "Rawalpindi",
-    province: "SINDH",
-    businessActivity: "Service Provider",
-    sector: "Services",
-    scenarioIds: ["SN018","SN019"],
-    sandboxToken: "Bearer df9b1769-25e7-3557-9343-37bc5e882b29",
-    productionToken: "Bearer df9b1769-25e7-3557-9343-37bc5e882b29",
-    registrationStatus: "Active",
-    registrationType: "Registered",
-    lastSaleInvoiceId: 1,
-    lastDebitNoteId: 1,
-  },
-  {
-    id: "mtc",
-    businessName: "SYED IMRAN HUSSAIN SHAH",
-    ntn: "4420653123917",
-    address: "Hyderabad",
-    province: "SINDH",
-    businessActivity: "Service Provider",
-    sector: "Services",
-    scenarioIds: ["SN018","SN019"],
-    sandboxToken: "Bearer 4c001ca4-4d0e-3f95-9b04-aec2cad0e5f5",
-    productionToken: "Bearer 4c001ca4-4d0e-3f95-9b04-aec2cad0e5f5",
-    registrationStatus: "Active",
-    registrationType: "Registered",
-    lastSaleInvoiceId: 1,
-    lastDebitNoteId: 1,
-  },
-]
-
-const defaultBuyers = [
-  {
-    id: "continental",
-    businessName: "CONTINENTAL BISCUITS LIMITED",
-    ntn: "0710106",
-    address: "Karachi",
-    province: "SINDH",
-    registrationType: "Registered",
-    registrationStatus: "Active",
-  },
-  {
-    id: "pso",
-    businessName: "PAKISTAN STATE OIL COMPANY LIMITED",
-    ntn: "0711554",
-    address: "Karachi",
-    province: "SINDH",
-    registrationType: "Registered",
-    registrationStatus: "Active",
-  },
-]
 
 // Toast notification system
 function showToast(type, title, message, duration = 5000) {
@@ -1405,6 +1662,23 @@ async function handleSuccessfulSubmission(response, seller, invoicePayload) {
     // Display success modal with the response
     displaySuccessModal(enrichedResponse);
     
+    // Set default tab to table view after modal is displayed
+    switchSuccessTab('table-tab');
+    // setTimeout(() => {
+    //   try {
+    //     console.log('🏠 Setting default tab to table-tab from success handler');
+    //     switchSuccessTab('table-tab');
+    //   } catch (error) {
+    //     console.warn('⚠️ Failed to set default tab from success handler:', error);
+    //     // Fallback: manually set the table tab visible
+    //     const tableTab = document.getElementById('table-tab');
+    //     if (tableTab) {
+    //       tableTab.style.display = 'block';
+    //       tableTab.classList.add('active');
+    //     }
+    //   }
+    // }, 2);
+    
     // Update the invoices table
     await populateInvoicesTable();
     
@@ -1431,25 +1705,130 @@ function enrichResponseWithInvoiceData(response, invoicePayload) {
 }
 
 
-function switchSuccessTab(tabId) {
-  // Hide all tab contents
-  document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
-  // Deactivate all buttons
-  document.querySelectorAll(".tab-nav button").forEach((btn) => btn.classList.remove("tab-active"));
-  
-  // Activate the requested tab
-  const targetTab = document.getElementById(tabId);
-  const targetButton = document.querySelector(`.tab-nav button[data-tab="${tabId}"]`);
 
+// Simple and reliable tab switching for success modal
+function switchSuccessTab(targetTabId) {
+  console.log('🔄 Switching to tab:', targetTabId);
+  
+  const tableTab = document.getElementById('table-tab');
+  const jsonTab = document.getElementById('json-tab');
+  const tabButtons = document.querySelectorAll('#successModal .tab-btn');
+  
+  if (!tableTab || !jsonTab) {
+    console.error('❌ Tab elements not found:', { tableTab: !!tableTab, jsonTab: !!jsonTab });
+    return;
+  }
+  
+  // Remove active class from all tabs and explicitly hide them
+  tableTab.classList.remove('active');
+  tableTab.style.display = 'none';
+  jsonTab.classList.remove('active');
+  jsonTab.style.display = 'none';
+  
+  // Remove active class from all buttons
+  tabButtons.forEach(btn => btn.classList.remove('tab-active'));
+  
+  // Add active class to target tab and button
+  const targetTab = document.getElementById(targetTabId);
+  const targetButton = document.querySelector(`#successModal [data-tab="${targetTabId}"]`);
+  
   if (targetTab && targetButton) {
-    targetTab.classList.add("active");
-    targetButton.classList.add("tab-active");
+    targetTab.classList.add('active');
+    targetTab.style.display = 'block';
+    targetButton.classList.add('tab-active');
+    
+    console.log('✅ Tab switched successfully to:', targetTabId);
+    console.log('📊 Tab visibility:', {
+      tableVisible: tableTab.style.display !== 'none' && tableTab.classList.contains('active'),
+      jsonVisible: jsonTab.style.display !== 'none' && jsonTab.classList.contains('active')
+    });
   } else {
-    console.warn(`Tab or button not found for tabId: ${tabId}`);
+    console.error('❌ Target tab or button not found:', { targetTab: !!targetTab, targetButton: !!targetButton });
   }
 }
 
+// Debug function accessible from browser console
+window.testTabs = function() {
+  console.log('🧪 TESTING TABS');
+  console.log('Switching to JSON...');
+  switchSuccessTab('json-tab');
+  setTimeout(() => {
+    console.log('Switching back to Table...');
+    switchSuccessTab('table-tab');
+  }, 2000);
+};
 
+// Export tab functions globally
+window.switchSuccessTab = switchSuccessTab;
+
+// Debug function to check current tab state
+window.debugTabState = function() {
+  const tableTab = document.getElementById('table-tab');
+  const jsonTab = document.getElementById('json-tab');
+  const tabButtons = document.querySelectorAll('#successModal .tab-btn');
+  
+  console.log('🔍 TAB DEBUG STATE:');
+  console.log('Table tab:', {
+    exists: !!tableTab,
+    hasActiveClass: tableTab?.classList.contains('active'),
+    displayStyle: tableTab?.style.display,
+    computedDisplay: tableTab ? getComputedStyle(tableTab).display : 'N/A',
+    visible: tableTab?.offsetHeight > 0
+  });
+  console.log('JSON tab:', {
+    exists: !!jsonTab,
+    hasActiveClass: jsonTab?.classList.contains('active'),
+    displayStyle: jsonTab?.style.display,
+    computedDisplay: jsonTab ? getComputedStyle(jsonTab).display : 'N/A',
+    visible: jsonTab?.offsetHeight > 0
+  });
+  console.log('Tab buttons:', Array.from(tabButtons).map(btn => ({
+    text: btn.textContent,
+    hasActiveClass: btn.classList.contains('tab-active'),
+    dataTab: btn.getAttribute('data-tab')
+  })));
+};
+
+// Debug function to force show table content
+window.forceShowTable = function() {
+  const tableTab = document.getElementById('table-tab');
+  const jsonTab = document.getElementById('json-tab');
+  
+  if (tableTab) {
+    tableTab.style.display = 'block';
+    tableTab.style.visibility = 'visible';
+    tableTab.classList.add('active');
+  }
+  if (jsonTab) {
+    jsonTab.style.display = 'none';
+    jsonTab.classList.remove('active');
+  }
+  
+  console.log('🔧 Force showed table tab');
+};
+
+// Manual test function for event listeners
+window.testTabButtons = function() {
+  console.log('🔍 TESTING TAB BUTTON EVENT LISTENERS');
+  const tabButtons = document.querySelectorAll('#successModal .tab-btn');
+  
+  tabButtons.forEach((button, index) => {
+    console.log(`Button ${index + 1}:`, {
+      text: button.textContent,
+      'data-tab': button.getAttribute('data-tab'),
+      hasEventListener: !!button.onclick,
+      isClickable: getComputedStyle(button).pointerEvents,
+      cursor: getComputedStyle(button).cursor
+    });
+  });
+  
+  if (tabButtons.length > 0) {
+    console.log('Programmatically clicking first button...');
+    tabButtons[0].click();
+  }
+  
+  return tabButtons.length;
+};
 
 async function displaySuccessModal(response) {
   if (!DOMElements.successModal) return;
@@ -1461,6 +1840,8 @@ async function displaySuccessModal(response) {
   const formattedResponse = JSON.stringify(response, null, 2);
   DOMElements.successResponseJson.textContent = formattedResponse;
 
+    console.log('✅ Success modal initialized with direct onClick handlers');
+    
   // Construct HTML for Table view
   let html = `<div style="margin-top: 20px;">
       <h3 style="color: #28a745; margin-bottom: 10px; font-size: 1rem;">✅ Submission Results</h3>
@@ -1518,26 +1899,17 @@ async function displaySuccessModal(response) {
   // Inject table HTML
   DOMElements.successResponseData.innerHTML = html;
 
-  // Explicitly set table tab as active
-  switchSuccessTab('table-tab');
+  // Show modal first
   DOMElements.successModal.classList.add("active");
 
-  // Attach listeners to toggle buttons (ensure only attached once)
-  const tabButtons = document.querySelectorAll(".tab-nav button");
-  tabButtons.forEach((btn) => {
-    // Remove existing listeners to prevent duplicates
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-    newBtn.addEventListener("click", (e) => {
-      const tabId = e.currentTarget.getAttribute("data-tab");
-      switchSuccessTab(tabId);
-    });
-  });
+  console.log('✅ Success modal initialized with direct onClick handlers');
+  
 
   // Create "Preview" button and inject into modal footer
-  const buttonContainer = document.querySelector('.modal-footer .left-buttons');
-  if (buttonContainer) {
-    const existingPreviewBtn = buttonContainer.querySelector('.preview-invoice-btn');
+  const modalFooter = document.querySelector('#successModal .modal-footer');
+
+  if (modalFooter) {
+    const existingPreviewBtn = modalFooter.querySelector('.preview-invoice-btn');
     if (existingPreviewBtn) existingPreviewBtn.remove();
 
     const previewButton = document.createElement('button');
@@ -1545,8 +1917,11 @@ async function displaySuccessModal(response) {
     previewButton.innerHTML = '<i class="fas fa-eye"></i> Preview As Invoice';
     previewButton.style.marginRight = '10px';
     previewButton.onclick = () => generateInvoicePDF(response, false, true);
-    buttonContainer.prepend(previewButton);
+    modalFooter.insertBefore(previewButton, modalFooter.firstChild);
+
   }
+
+  console.log('✅ Success modal initialized with direct onClick handlers');
 }
 
 
@@ -1556,14 +1931,50 @@ function handleFailedSubmission(response) {
   displayErrorModal(errorMsg);
 }
 
-function handleSubmissionError(error) {
-  showToast("error", "Submission Error", error.message || error);
-  displayErrorModal(error.message || error);
+function handleSubmissionError(error, errorDetails = null) {
+  const errorMessage = error.message || error;
+  showToast("error", "Submission Error", errorMessage);
+  displayErrorModal(errorMessage, errorDetails);
 }
 
-function displayErrorModal(errorMsg) {
+function displayErrorModal(errorMsg, errorDetails = null) {
   if (DOMElements.errorModal) {
+    // Set the main error message
     document.getElementById("errorModalMessage").textContent = errorMsg;
+    
+    // Handle error details if provided
+    const errorDetailsElement = document.getElementById("errorDetails");
+    const errorDetailsContent = document.getElementById("errorDetailsContent");
+    const showDetailsBtn = document.getElementById("showErrorDetailsBtn");
+    
+    if (errorDetails && errorDetailsElement && errorDetailsContent) {
+      // Format error details
+      const detailsText = typeof errorDetails === 'object' 
+        ? JSON.stringify(errorDetails, null, 2)
+        : errorDetails.toString();
+      
+      errorDetailsContent.textContent = detailsText;
+      
+      // Show the details button
+      if (showDetailsBtn) {
+        showDetailsBtn.style.display = 'inline-block';
+        
+        // Add click handler for showing details
+        showDetailsBtn.onclick = () => {
+          const isVisible = errorDetailsElement.style.display !== 'none';
+          errorDetailsElement.style.display = isVisible ? 'none' : 'block';
+          showDetailsBtn.innerHTML = isVisible 
+            ? '<i class="fas fa-info-circle"></i> Show Details'
+            : '<i class="fas fa-eye-slash"></i> Hide Details';
+        };
+      }
+    } else {
+      // Hide details section if no details provided
+      if (errorDetailsElement) errorDetailsElement.style.display = 'none';
+      if (showDetailsBtn) showDetailsBtn.style.display = 'none';
+    }
+    
+    // Show the modal
     DOMElements.errorModal.classList.add("active");
   }
 }
@@ -1627,15 +2038,18 @@ async function fetchWithAuth(endpoint, options = {}) {
 try {
 const sellers = await dbGetAll(STORE_NAMES.sellers)
 const selectedSellerNTN = DOMElements.sellerSelect?.value || ""
-const seller = sellers.find((s) => s.ntn === selectedSellerNTN)
+let seller = sellers.find((s) => s.ntn === selectedSellerNTN)
+if (!seller && sellers.length > 0) {
+  seller = sellers[0];
+}
 if (!seller) {
-  showToast("error", "Seller Error", "❌ No seller selected or seller not found");
-  throw new Error("No seller selected");
+  showToast("error", "Seller Error", "❌ No seller available in database. Please load sample data or add a seller.");
+  throw new Error("No seller available");
 }
 
-const isProduction = DOMElements.modeToggle.checked;
+const isProduction = DOMElements.modeToggle ? DOMElements.modeToggle.checked : false;
 const environment = isProduction ? "production" : "sandbox";
-const token = isProduction ? seller.productionToken : seller.sandboxToken;
+const token = (isProduction ? seller.productionToken : seller.sandboxToken) || seller.sandboxToken || seller.productionToken || "";
 
 const url = typeof endpoint === "string" ? endpoint : endpoint[environment];
 
@@ -1991,8 +2405,7 @@ async function populateInvoiceScenarios(sellerId, selectedScenarioId = null) {
   }
 }
 
-// Make functions global for HTML onclick handlers
-window.removeScenarioChip = removeScenarioChip
+
 
 // Product Modal Functions
 function initProductModal() {
@@ -2545,7 +2958,12 @@ function createPaginationControls(containerId, currentPage, totalPages, onPageCh
   
   container.innerHTML = '';
   
-  if (totalPages <= 1) return;
+  // Always show pagination controls for testing purposes, even with 1 page
+  // Commented out the early return to enable testing with 1 item per page
+  // if (totalPages <= 1) return;
+  
+  // Show at least basic pagination info even with 1 page
+  if (totalPages < 1) return;
   
   // Previous button
   const prevBtn = document.createElement('button');
@@ -2578,13 +2996,64 @@ function createPaginationControls(containerId, currentPage, totalPages, onPageCh
   container.appendChild(nextBtn);
 }
 
+// Function to attach per page event listeners
+function attachPerPageListeners() {
+  // Attach invoices per page listener
+  const invoicesPerPage = document.getElementById('invoicesPerPage');
+  if (invoicesPerPage) {
+    invoicesPerPage.removeEventListener('change', onInvoicesPerPageChange);
+    invoicesPerPage.addEventListener('change', onInvoicesPerPageChange);
+  }
+  
+  // Attach products per page listener
+  const productsPerPage = document.getElementById('productsPerPage');
+  if (productsPerPage) {
+    productsPerPage.removeEventListener('change', onProductsPerPageChange);
+    productsPerPage.addEventListener('change', onProductsPerPageChange);
+  }
+  
+  // Attach sellers per page listener
+  const sellersPerPage = document.getElementById('sellersPerPage');
+  if (sellersPerPage) {
+    sellersPerPage.removeEventListener('change', onSellersPerPageChange);
+    sellersPerPage.addEventListener('change', onSellersPerPageChange);
+  }
+  
+  // Attach buyers per page listener
+  const buyersPerPage = document.getElementById('buyersPerPage');
+  if (buyersPerPage) {
+    buyersPerPage.removeEventListener('change', onBuyersPerPageChange);
+    buyersPerPage.addEventListener('change', onBuyersPerPageChange);
+  }
+}
+
+// Per page change handlers
+function onInvoicesPerPageChange() {
+  currentInvoicesPage = 1;
+  populateInvoicesTable();
+}
+
+function onProductsPerPageChange() {
+  currentProductsPage = 1;
+  populateProductsTable();
+}
+
+function onSellersPerPageChange() {
+  currentSellersPage = 1;
+  populateSellersTable();
+}
+
+function onBuyersPerPageChange() {
+  currentBuyersPage = 1;
+  populateBuyersTable();
+}
+
 
 // Initialize product filters
 function initProductFilters() {
   const searchInput = document.getElementById('productSearch');
   const typeFilter = document.getElementById('productTypeFilter');
   const statusFilter = document.getElementById('productStatusFilter');
-  const perPageFilter = document.getElementById('productsPerPage');
 
   // Handle search input
   searchInput?.addEventListener('input', debounce(() => {
@@ -2593,7 +3062,7 @@ function initProductFilters() {
   }, 300));
 
   // Handle filters
-  [typeFilter, statusFilter, perPageFilter].forEach(filter => {
+  [typeFilter, statusFilter].forEach(filter => {
     filter?.addEventListener('change', () => {
       currentProductsPage = 1;
       populateProductsTable();
@@ -2842,7 +3311,8 @@ async function populateSellersTable() {
       </td>
     `;
     tbody.appendChild(row);
-    document.getElementById('sellersPaginationInfo').textContent = 'Showing 0-0 of 0 items';
+    document.getElementById('sellersPaginationInfo').innerHTML = 'Showing <select id="sellersPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option><option value="all">All</option></select> of 0 items';
+    attachPerPageListeners();
     return;
   }
 
@@ -2855,8 +3325,12 @@ async function populateSellersTable() {
       <td>${seller.registrationStatus || "Unknown"}</td>
       <td>${seller.registrationType || "Unknown"}</td>
       <td class="action-cell">
-        <button class="btn btn-sm" onclick="editSeller('${seller.ntn}')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-sm btn-danger" onclick="deleteSeller('${seller.ntn}')"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-edit" onclick="editSeller('${seller.ntn}')" title="Edit Seller">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-delete" onclick="confirmDeleteSeller('${seller.ntn}')" title="Delete Seller">
+          <i class="fas fa-trash"></i>
+        </button>
       </td>
     `;
     tbody.appendChild(row);
@@ -2865,11 +3339,14 @@ async function populateSellersTable() {
   // Update pagination info and controls
   const paginationInfo = document.getElementById('sellersPaginationInfo');
   if (paginationInfo) {
+    const perPageText = perPage === 'all' ? 'All' : perPage;
     if (perPage === 'all') {
-      paginationInfo.textContent = `Showing 1-${filteredSellers.length} of ${filteredSellers.length} items`;
+      paginationInfo.innerHTML = `Showing <select id="sellersPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all" selected>All</option></select> of ${filteredSellers.length} items`;
     } else {
-      paginationInfo.textContent = `Showing ${paginatedData.startIndex}-${paginatedData.endIndex} of ${paginatedData.totalItems} items`;
+      paginationInfo.innerHTML = `Showing <select id="sellersPerPage" class="per-page-select"><option value="1"${perPage==='1'?' selected':''}>1</option><option value="10"${perPage==='10'?' selected':''}>10</option><option value="20"${perPage==='20'?' selected':''}>20</option><option value="50"${perPage==='50'?' selected':''}>50</option><option value="100"${perPage==='100'?' selected':''}>100</option><option value="all">All</option></select> of ${paginatedData.totalItems} items`;
     }
+    // Attach event listener after updating HTML
+    attachPerPageListeners();
   }
   
   createPaginationControls('sellersPaginationControls', paginatedData.currentPage, paginatedData.totalPages, (page) => {
@@ -2909,7 +3386,6 @@ function initSellerFilters() {
   const provinceFilter = document.getElementById('sellerProvinceFilter');
   const statusFilter = document.getElementById('sellerStatusFilter');
   const regStatusFilter = document.getElementById('sellerRegStatusFilter');
-  const perPageFilter = document.getElementById('sellersPerPage');
 
   // Handle search input
   searchInput?.addEventListener('input', debounce(() => {
@@ -2918,7 +3394,7 @@ function initSellerFilters() {
   }, 300));
 
   // Handle filters
-  [provinceFilter, statusFilter, regStatusFilter, perPageFilter].forEach(filter => {
+  [provinceFilter, statusFilter, regStatusFilter].forEach(filter => {
     filter?.addEventListener('change', () => {
       currentSellersPage = 1;
       populateSellersTable();
@@ -3022,7 +3498,8 @@ async function populateBuyersTable() {
       </td>
     `;
     tbody.appendChild(row);
-    document.getElementById('buyersPaginationInfo').textContent = 'Showing 0-0 of 0 items';
+    document.getElementById('buyersPaginationInfo').innerHTML = 'Showing <select id="buyersPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option><option value="all">All</option></select> of 0 items';
+    attachPerPageListeners();
     return;
   }
 
@@ -3035,8 +3512,12 @@ async function populateBuyersTable() {
       <td>${buyer.registrationType}</td>
       <td>${buyer.registrationStatus || "Unknown"}</td>
       <td class="action-cell">
-        <button class="btn btn-sm" onclick="editBuyer('${buyer.ntn}')"><i class="fas fa-edit"></i></button>
-        <button class="btn btn-sm btn-danger" onclick="deleteBuyer('${buyer.ntn}')"><i class="fas fa-trash"></i></button>
+        <button class="btn btn-edit" onclick="editBuyer('${buyer.ntn}')" title="Edit Buyer">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-delete" onclick="confirmDeleteBuyer('${buyer.ntn}')" title="Delete Buyer">
+          <i class="fas fa-trash"></i>
+        </button>
       </td>
     `;
     tbody.appendChild(row);
@@ -3045,11 +3526,14 @@ async function populateBuyersTable() {
   // Update pagination info and controls
   const paginationInfo = document.getElementById('buyersPaginationInfo');
   if (paginationInfo) {
+    const perPageText = perPage === 'all' ? 'All' : perPage;
     if (perPage === 'all') {
-      paginationInfo.textContent = `Showing 1-${filteredBuyers.length} of ${filteredBuyers.length} items`;
+      paginationInfo.innerHTML = `Showing <select id="buyersPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all" selected>All</option></select> of ${filteredBuyers.length} items`;
     } else {
-      paginationInfo.textContent = `Showing ${paginatedData.startIndex}-${paginatedData.endIndex} of ${paginatedData.totalItems} items`;
+      paginationInfo.innerHTML = `Showing <select id="buyersPerPage" class="per-page-select"><option value="1"${perPage==='1'?' selected':''}>1</option><option value="10"${perPage==='10'?' selected':''}>10</option><option value="20"${perPage==='20'?' selected':''}>20</option><option value="50"${perPage==='50'?' selected':''}>50</option><option value="100"${perPage==='100'?' selected':''}>100</option><option value="all">All</option></select> of ${paginatedData.totalItems} items`;
     }
+    // Attach event listener after updating HTML
+    attachPerPageListeners();
   }
   
   createPaginationControls('buyersPaginationControls', paginatedData.currentPage, paginatedData.totalPages, (page) => {
@@ -3089,7 +3573,6 @@ function initBuyerFilters() {
   const provinceFilter = document.getElementById('buyerProvinceFilter');
   const regTypeFilter = document.getElementById('buyerRegTypeFilter');
   const statusFilter = document.getElementById('buyerStatusFilter');
-  const perPageFilter = document.getElementById('buyersPerPage');
 
   // Handle search input
   searchInput?.addEventListener('input', debounce(() => {
@@ -3098,7 +3581,7 @@ function initBuyerFilters() {
   }, 300));
 
   // Handle filters
-  [provinceFilter, regTypeFilter, statusFilter, perPageFilter].forEach(filter => {
+  [provinceFilter, regTypeFilter, statusFilter].forEach(filter => {
     filter?.addEventListener('change', () => {
       currentBuyersPage = 1;
       populateBuyersTable();
@@ -3860,61 +4343,75 @@ function updateInvoiceTotal() {
 function renderInvoicePreview(invoice) {
   if (!invoice) return;
   
-  // Store the current invoice data for JSON view
+  // Store the current invoice data for JSON view and PDF download
   window.currentInvoiceData = invoice;
   
   // Show the preview modal
-  const previewModal = document.getElementById('previewModal');
+  const previewModal = document.getElementById('previewModal') || DOMElements.previewModal;
   if (previewModal) {
     previewModal.classList.add('active');
   }
   
   // Generate the preview using the same function as the PDF generation
-  generateInvoicePDF(invoice, true, true);
+  generateInvoicePDF(invoice, false, true);
 }
 
 // Helper: Load invoice data into the Create Invoice form
 async function loadInvoiceIntoForm(invoice) {
+  if (!invoice) return;
+  const payload = invoice.invoicePayload || invoice;
+  
   // Set seller and buyer selects
-  DOMElements.sellerSelect.value = invoice.sellerNTNCNIC || invoice.seller?.ntn || '';
-  DOMElements.buyerSelect.value = invoice.buyerNTNCNIC || invoice.buyer?.ntn || '';
-  DOMElements.invoiceDate.value = invoice.invoiceDate || invoice.dated || '';
-  DOMElements.invoiceType.value = invoice.invoiceType || '';
-  DOMElements.scenarioId.value = invoice.scenarioId || '';
-  DOMElements.currency.value = invoice.currency || '';
+  const sellerNTN = payload.sellerNTNCNIC || invoice.sellerNTNCNIC || invoice.seller?.ntn || '';
+  const buyerNTN = payload.buyerNTNCNIC || invoice.buyerNTNCNIC || invoice.buyer?.ntn || '';
+  
+  if (DOMElements.sellerSelect) DOMElements.sellerSelect.value = sellerNTN;
+  if (DOMElements.buyerSelect) DOMElements.buyerSelect.value = buyerNTN;
+  if (DOMElements.invoiceDate) DOMElements.invoiceDate.value = payload.invoiceDate || invoice.invoiceDate || invoice.dated || '';
+  if (DOMElements.invoiceType) DOMElements.invoiceType.value = payload.invoiceType || invoice.invoiceType || 'Sale Invoice';
+  if (DOMElements.scenarioId) DOMElements.scenarioId.value = payload.scenarioId || invoice.scenarioId || '';
+  if (DOMElements.currency) DOMElements.currency.value = payload.currency || invoice.currency || 'PKR';
   
   // Ensure invoice ID is properly handled as string
   if (invoice.id) {
     currentEditingInvoice = { ...invoice, id: invoice.id.toString() };
   }
-  DOMElements.invoiceRef.value = invoice.invoiceRefNo || invoice.invoiceRef || '';
+  if (DOMElements.invoiceRef) {
+    DOMElements.invoiceRef.value = payload.invoiceRefNo || invoice.invoiceRefNo || invoice.invoiceRef || '';
+  }
   
   // Clear existing items and load invoice items
   items = [];
   itemCounter = 0;
   
-  if (invoice.items && invoice.items.length > 0) {
-    for (const item of invoice.items) {
+  const rawItems = payload.items || invoice.items || [];
+  if (rawItems && rawItems.length > 0) {
+    for (const item of rawItems) {
+      const qty = parseFloat(item.quantity) || 1;
+      const valExcl = parseFloat(item.valueSalesExcludingST) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || (qty > 0 && valExcl > 0 ? valExcl / qty : 0);
+      const taxRate = parseFloat(item.taxRate) || parseFloat(item.rate) || 0;
+      
       const newItem = {
         id: `item-${itemCounter++}`,
         hsCode: item.hsCode || '',
         description: item.productDescription || item.description || '',
         serviceTypeId: parseInt(item.serviceTypeId) || 18,
-        saleType: item.saleType || 'Services',
+        saleType: (item.saleType || 'Services').trim(),
         uom: item.uoM || item.uom || '',
-        quantity: parseFloat(item.quantity) || 1,
-        unitPrice: parseFloat(item.unitPrice) || 0,
-        taxRate: parseFloat(item.taxRate) || parseFloat(item.rate) || 0,
+        quantity: qty,
+        unitPrice: unitPrice,
+        taxRate: taxRate,
         extraTax: parseFloat(item.extraTax) || 0,
         furtherTax: parseFloat(item.furtherTax) || 0,
         discount: parseFloat(item.discount) || 0,
         fedPayable: parseFloat(item.fedPayable) || 0,
         salesTaxWithheldAtSource: parseFloat(item.salesTaxWithheldAtSource) || 0,
         rateId: item.rateId || null,
-        sroSchedule: item.sroSchedule || '',
-        sroItem: item.sroItem || '',
-        uomOptions: item.uom ? [item.uom] : [],
-        taxRateOptions: item.taxRate ? [{ ratE_VALUE: item.taxRate, ratE_DESC: `${item.taxRate}%`, ratE_ID: item.rateId }] : [],
+        sroSchedule: item.sroScheduleNo || item.sroSchedule || '',
+        sroItem: item.sroItemSerialNo || item.sroItem || '',
+        uomOptions: (item.uoM || item.uom) ? [item.uoM || item.uom] : [],
+        taxRateOptions: taxRate ? [{ ratE_VALUE: taxRate, ratE_DESC: `${taxRate}%`, ratE_ID: item.rateId }] : [],
         sroScheduleOptions: [],
         sroItemOptions: [],
         annexureId: 3
@@ -3932,10 +4429,10 @@ async function loadInvoiceIntoForm(invoice) {
   
   // Trigger form updates
   setTimeout(async () => {
-    if (DOMElements.sellerSelect.value) {
-      await populateInvoiceScenarios(DOMElements.sellerSelect.value, invoice.scenarioId);
+    if (DOMElements.sellerSelect && DOMElements.sellerSelect.value) {
+      await populateInvoiceScenarios(DOMElements.sellerSelect.value, payload.scenarioId || invoice.scenarioId);
     }
-    if (DOMElements.buyerSelect.value) {
+    if (DOMElements.buyerSelect && DOMElements.buyerSelect.value) {
       DOMElements.buyerSelect.dispatchEvent(new Event('change'));
     }
     await updateInvoiceReference();
@@ -3960,27 +4457,74 @@ function initModals() {
   const buyerForm = document.getElementById("buyerForm")
   const buyerModalTitle = DOMElements.buyerModalTitle
 
-  addBuyerBtn.addEventListener("click", () => {
-    currentEditingBuyer = null
-    buyerForm.reset()
-    buyerModalTitle.textContent = "Add New Buyer"
-    document.getElementById("buyerModalError").classList.remove("show")
-    buyerModal.classList.add("active")
-  })
+  // Safety check for required elements
+  if (!buyerModal || !buyerForm || !buyerModalTitle) {
+    console.warn('Buyer modal elements not found, skipping buyer modal initialization');
+    return;
+  }
 
-  addBuyerModalBtn.addEventListener("click", () => {
-    currentEditingBuyer = null
-    buyerForm.reset()
-    buyerModalTitle.textContent = "Add New Buyer"
-    document.getElementById("buyerModalError").classList.remove("show")
-    buyerModal.classList.add("active")
-  })
+  if (addBuyerBtn) {
+    addBuyerBtn.addEventListener("click", () => {
+      currentEditingBuyer = null
+      buyerForm.reset()
+      buyerModalTitle.textContent = "Add New Buyer"
+      const errorEl = document.getElementById("buyerModalError");
+      if (errorEl) errorEl.classList.remove("show")
+      buyerModal.classList.add("active")
+    })
+  }
 
-  closeBuyerModal.addEventListener("click", () => buyerModal.classList.remove("active"))
-  cancelBuyerBtn.addEventListener("click", () => buyerModal.classList.remove("active"))
+  // Check if addBuyerModalBtn exists before adding event listener
+  if (addBuyerModalBtn) {
+    addBuyerModalBtn.addEventListener("click", () => {
+      currentEditingBuyer = null
+      buyerForm.reset()
+      buyerModalTitle.textContent = "Add New Buyer"
+      const errorEl = document.getElementById("buyerModalError");
+      if (errorEl) errorEl.classList.remove("show")
+      buyerModal.classList.add("active")
+    })
+  }
+
+  if (closeBuyerModal) {
+    closeBuyerModal.addEventListener("click", () => buyerModal.classList.remove("active"))
+  }
+  
+  if (cancelBuyerBtn) {
+    cancelBuyerBtn.addEventListener("click", () => buyerModal.classList.remove("active"))
+  }
 
   // Success Modal close handlers
   const successModalCloseBtn = DOMElements.closeSuccessModal;
+  
+  
+  // Error Modal event handlers
+  if (DOMElements.closeErrorModal) {
+    DOMElements.closeErrorModal.addEventListener('click', () => {
+      DOMElements.errorModal.classList.remove('active');
+    });
+  }
+  
+  if (DOMElements.closeErrorModalBtn) {
+    DOMElements.closeErrorModalBtn.addEventListener('click', () => {
+      DOMElements.errorModal.classList.remove('active');
+    });
+  }
+  
+  if (DOMElements.retrySubmissionBtn) {
+    DOMElements.retrySubmissionBtn.addEventListener('click', () => {
+      // Hide error modal
+      DOMElements.errorModal.classList.remove('active');
+      // Hide any error display
+      if (DOMElements.invoiceResult) {
+        DOMElements.invoiceResult.style.display = "none";
+      }
+      // Trigger submission again
+      if (DOMElements.submitBtn) {
+        DOMElements.submitBtn.click();
+      }
+    });
+  }
   const successModalCloseFooterBtn = document.getElementById("closeSuccessModalBtn");
   
   const closeSuccessModalHandler = async () => {
@@ -4002,56 +4546,61 @@ function initModals() {
   if (successModalCloseBtn) successModalCloseBtn.addEventListener("click", closeSuccessModalHandler);
   if (successModalCloseFooterBtn) successModalCloseFooterBtn.addEventListener("click", closeSuccessModalHandler);
 
-  DOMElements.buyerNTN.addEventListener("blur", async (event) => {
-    const ntn = event.target.value
-    if (!ntn) return
+  // Buyer field event listeners with safety checks
+  if (DOMElements.buyerNTN) {
+    DOMElements.buyerNTN.addEventListener("blur", async (event) => {
+      const ntn = event.target.value
+      if (!ntn) return
 
-    const existingBuyers = await dbGetAll(STORE_NAMES.buyers)
-    const exists = existingBuyers.some(
-      (buyer) => buyer.ntn === ntn && (!currentEditingBuyer || buyer.id !== currentEditingBuyer.id),
-    )
+      const existingBuyers = await dbGetAll(STORE_NAMES.buyers)
+      const exists = existingBuyers.some(
+        (buyer) => buyer.ntn === ntn && (!currentEditingBuyer || buyer.id !== currentEditingBuyer.id),
+      )
 
-    if (exists) {
-      showModalError("buyerModal", "A buyer with this NTN/CNIC already exists!")
-      event.target.focus()
-      return
-    }
-
-    const { status } = await validateRegistration(ntn)
-    DOMElements.buyerStatus.value = status
-
-    const { type } = await getRegistrationType(ntn)
-    DOMElements.buyerRegType.value = type
-  })
-
-  saveBuyerBtn.addEventListener("click", async () => {
-    const buyers = await dbGetAll(STORE_NAMES.buyers)
-    const newBuyer = {
-      id: currentEditingBuyer ? currentEditingBuyer.id : Date.now().toString(),
-      ntn: DOMElements.buyerNTN.value,
-      businessName: DOMElements.buyerBusinessName.value,
-      registrationType: DOMElements.buyerRegType.value,
-      province: DOMElements.buyerProvince.value,
-      address: DOMElements.buyerAddress.value,
-      registrationStatus: DOMElements.buyerStatus.value,
-    }
-
-    if (currentEditingBuyer) {
-      const index = buyers.findIndex((buyer) => buyer.id === currentEditingBuyer.id)
-      if (index !== -1) {
-        buyers[index] = newBuyer
+      if (exists) {
+        showModalError("buyerModal", "A buyer with this NTN/CNIC already exists!")
+        event.target.focus()
+        return
       }
-    } else {
-      buyers.push(newBuyer)
-    }
 
-    await dbSetAll(STORE_NAMES.buyers, buyers)
-    populateBuyerSelect()
-    populateBuyersTable()
-    buyerForm.reset()
-    buyerModal.classList.remove("active")
-    showToast("success", "Buyer Saved", "Buyer information saved successfully")
-  })
+      const { status } = await validateRegistration(ntn)
+      if (DOMElements.buyerStatus) DOMElements.buyerStatus.value = status
+
+      const { type } = await getRegistrationType(ntn)
+      if (DOMElements.buyerRegType) DOMElements.buyerRegType.value = type
+    })
+  }
+
+  if (saveBuyerBtn) {
+    saveBuyerBtn.addEventListener("click", async () => {
+      const buyers = await dbGetAll(STORE_NAMES.buyers)
+      const newBuyer = {
+        id: currentEditingBuyer ? currentEditingBuyer.id : Date.now().toString(),
+        ntn: DOMElements.buyerNTN?.value || '',
+        businessName: DOMElements.buyerBusinessName?.value || '',
+        registrationType: DOMElements.buyerRegType?.value || '',
+        province: DOMElements.buyerProvince?.value || '',
+        address: DOMElements.buyerAddress?.value || '',
+        registrationStatus: DOMElements.buyerStatus?.value || '',
+      }
+
+      if (currentEditingBuyer) {
+        const index = buyers.findIndex((buyer) => buyer.id === currentEditingBuyer.id)
+        if (index !== -1) {
+          buyers[index] = newBuyer
+        }
+      } else {
+        buyers.push(newBuyer)
+      }
+
+      await dbSetAll(STORE_NAMES.buyers, buyers)
+      if (typeof populateBuyerSelect === 'function') populateBuyerSelect()
+      if (typeof populateBuyersTable === 'function') populateBuyersTable()
+      buyerForm.reset()
+      buyerModal.classList.remove("active")
+      showToast("success", "Buyer Saved", "Buyer information saved successfully")
+    })
+  }
 
   // Seller Modal
   const sellerModal = DOMElements.sellerModal
@@ -4062,94 +4611,127 @@ function initModals() {
   const sellerForm = document.getElementById("sellerForm")
   const sellerModalTitle = DOMElements.sellerModalTitle
 
-  addSellerBtn.addEventListener("click", () => {
-    currentEditingSeller = null
-    sellerForm.reset()
-    sellerModalTitle.textContent = "Add New Seller"
-    document.getElementById("sellerModalError").classList.remove("show")
-    DOMElements.scenarioChips.innerHTML = ""
-    DOMElements.sellerScenarioIds.value = ""
-    sellerModal.classList.add("active")
-  })
-
-  closeSellerModal.addEventListener("click", () => sellerModal.classList.remove("active"))
-  cancelSellerBtn.addEventListener("click", () => sellerModal.classList.remove("active"))
-
-  // Business Activity change handler
-  DOMElements.sellerBusinessActivity.addEventListener("change", function () {
-    populateSectorOptions(this.value)
-    DOMElements.sellerSector.value = ""
-    DOMElements.sellerScenarioSelect.innerHTML = '<option value="">Select Scenario to Add</option>'
-  })
-
-  // Sector change handler
-  DOMElements.sellerSector.addEventListener("change", function () {
-    const businessActivity = DOMElements.sellerBusinessActivity.value
-    if (businessActivity && this.value) {
-      populateScenarioOptions(businessActivity, this.value)
-    }
-  })
-
-  // Scenario selection handler
-  DOMElements.sellerScenarioSelect.addEventListener("change", function () {
-    if (this.value) {
-      addScenarioChip(this.value)
-      this.value = ""
-    }
-  })
-
-  DOMElements.sellerNTN.addEventListener("blur", async (event) => {
-    const ntn = event.target.value
-    if (!ntn) return
-
-    const existingSellers = await dbGetAll(STORE_NAMES.sellers)
-    const exists = existingSellers.some(
-      (seller) => seller.ntn === ntn && (!currentEditingSeller || seller.id !== currentEditingSeller.id),
-    )
-
-    if (exists) {
-      showModalError("sellerModal", "A seller with this NTN already exists!")
-      event.target.focus()
-      return
+  // Safety check for seller modal elements
+  if (!sellerModal || !sellerForm) {
+    console.warn('Seller modal elements not found, skipping seller modal initialization');
+  } else {
+    if (addSellerBtn) {
+      addSellerBtn.addEventListener("click", () => {
+        currentEditingSeller = null
+        sellerForm.reset()
+        if (sellerModalTitle) sellerModalTitle.textContent = "Add New Seller"
+        const errorEl = document.getElementById("sellerModalError");
+        if (errorEl) errorEl.classList.remove("show")
+        if (DOMElements.scenarioChips) DOMElements.scenarioChips.innerHTML = ""
+        if (DOMElements.sellerScenarioIds) DOMElements.sellerScenarioIds.value = ""
+        sellerModal.classList.add("active")
+      })
     }
 
-    const sandboxToken = DOMElements.sellerSandboxToken.value
-    const productionToken = DOMElements.sellerProductionToken.value
-    const token = sandboxToken || productionToken
-
-    if (token) {
-      const { status } = await validateRegistration(ntn, token)
-      DOMElements.sellerRegStatus.value = status
-
-      const { type } = await getRegistrationType(ntn, token)
-      DOMElements.sellerRegType.value = type
+    if (closeSellerModal) {
+      closeSellerModal.addEventListener("click", () => sellerModal.classList.remove("active"))
     }
-  })
+    
+    if (cancelSellerBtn) {
+      cancelSellerBtn.addEventListener("click", () => sellerModal.classList.remove("active"))
+    }
 
-  saveSellerBtn.addEventListener("click", async () => {
-  const newSeller = {
-    id: currentEditingSeller ? currentEditingSeller.id : Date.now().toString(),
-    ntn: DOMElements.sellerNTN.value,
-    businessName: DOMElements.sellerBusinessName.value,
-    businessActivity: DOMElements.sellerBusinessActivity.value,
-    sector: DOMElements.sellerSector.value,
-    scenarioIds: document.getElementById("sellerScenarioIds").value.split(",").filter((id) => id.trim()),
-    province: DOMElements.sellerProvince.value,
-    address: DOMElements.sellerAddress.value,
-    sandboxToken: DOMElements.sellerSandboxToken.value,
-    productionToken: DOMElements.sellerProductionToken.value,
-    registrationStatus: DOMElements.sellerRegStatus.value,
-    registrationType: DOMElements.sellerRegType.value,
-    lastSaleInvoiceId: Number.parseInt(DOMElements.sellerLastSaleInvoiceId.value) || 1,
-    lastDebitNoteId: Number.parseInt(DOMElements.sellerLastDebitNoteId.value) || 1,
-  };
-  await dbSet(STORE_NAMES.sellers, newSeller);
-  await populateSellerSelect();
-  await populateSellersTable();
-  sellerForm.reset();
-  sellerModal.classList.remove("active");
-  showToast("success", "Seller Saved", "Seller information saved successfully");
-});
+    // Business Activity change handler
+    if (DOMElements.sellerBusinessActivity) {
+      DOMElements.sellerBusinessActivity.addEventListener("change", function () {
+        if (typeof populateSectorOptions === 'function') populateSectorOptions(this.value)
+        if (DOMElements.sellerSector) DOMElements.sellerSector.value = ""
+        if (DOMElements.sellerScenarioSelect) {
+          DOMElements.sellerScenarioSelect.innerHTML = '<option value="">Select Scenario to Add</option>'
+        }
+      })
+    }
+
+    // Sector change handler
+    if (DOMElements.sellerSector) {
+      DOMElements.sellerSector.addEventListener("change", function () {
+        const businessActivity = DOMElements.sellerBusinessActivity?.value
+        if (businessActivity && this.value && typeof populateScenarioOptions === 'function') {
+          populateScenarioOptions(businessActivity, this.value)
+        }
+      })
+    }
+
+    // Scenario selection handler
+    if (DOMElements.sellerScenarioSelect) {
+      DOMElements.sellerScenarioSelect.addEventListener("change", function () {
+        if (this.value && typeof addScenarioChip === 'function') {
+          addScenarioChip(this.value)
+          this.value = ""
+        }
+      })
+    }
+  }
+
+  // Seller NTN field event listener with safety check
+  if (DOMElements.sellerNTN) {
+    DOMElements.sellerNTN.addEventListener("blur", async (event) => {
+      const ntn = event.target.value
+      if (!ntn) return
+
+      const existingSellers = await dbGetAll(STORE_NAMES.sellers)
+      const exists = existingSellers.some(
+        (seller) => seller.ntn === ntn && (!currentEditingSeller || seller.id !== currentEditingSeller.id),
+      )
+
+      if (exists) {
+        showModalError("sellerModal", "A seller with this NTN already exists!")
+        event.target.focus()
+        return
+      }
+
+      const sandboxToken = DOMElements.sellerSandboxToken?.value
+      const productionToken = DOMElements.sellerProductionToken?.value
+      const token = sandboxToken || productionToken
+
+      if (token) {
+        const { status } = await validateRegistration(ntn, token)
+        if (DOMElements.sellerRegStatus) DOMElements.sellerRegStatus.value = status
+
+        const { type } = await getRegistrationType(ntn, token)
+        if (DOMElements.sellerRegType) DOMElements.sellerRegType.value = type
+      }
+    })
+  }
+
+  if (saveSellerBtn && sellerForm && sellerModal) {
+    saveSellerBtn.addEventListener("click", async () => {
+      const newSeller = {
+        id: currentEditingSeller ? currentEditingSeller.id : Date.now().toString(),
+        ntn: DOMElements.sellerNTN?.value || '',
+        businessName: DOMElements.sellerBusinessName?.value || '',
+        businessActivity: DOMElements.sellerBusinessActivity?.value || '',
+        sector: DOMElements.sellerSector?.value || '',
+        scenarioIds: document.getElementById("sellerScenarioIds")?.value.split(",").filter((id) => id.trim()) || [],
+        province: DOMElements.sellerProvince?.value || '',
+        address: DOMElements.sellerAddress?.value || '',
+        sandboxToken: DOMElements.sellerSandboxToken?.value || '',
+        productionToken: DOMElements.sellerProductionToken?.value || '',
+        registrationStatus: DOMElements.sellerRegStatus?.value || '',
+        registrationType: DOMElements.sellerRegType?.value || '',
+        lastSaleInvoiceId: Number.parseInt(DOMElements.sellerLastSaleInvoiceId?.value) || 1,
+        lastDebitNoteId: Number.parseInt(DOMElements.sellerLastDebitNoteId?.value) || 1,
+      };
+      await dbSet(STORE_NAMES.sellers, newSeller);
+      if (typeof populateSellerSelect === 'function') await populateSellerSelect();
+      if (typeof populateSellersTable === 'function') await populateSellersTable();
+      sellerForm.reset();
+      sellerModal.classList.remove("active");
+      showToast("success", "Seller Saved", "Seller information saved successfully");
+      
+      // Check if this was the first seller added (when globalSellers was empty)
+      const sellers = await dbGetAll(STORE_NAMES.sellers);
+      if (sellers.length === 1) {
+        // Reload the app to populate all tables and dashboard with the new seller
+        await populateTablesAndDashboard();
+      }
+    });
+  }
 
   // JSON Modal
   const jsonModal = document.getElementById("jsonModal")
@@ -4159,146 +4741,53 @@ function initModals() {
   const copyJsonBtn = document.getElementById("copyJsonBtn")
   const jsonPayload = document.getElementById("jsonPayload")
 
+  // Safety checks for JSON modal elements
+  if (viewJsonBtn && jsonModal) {
+    viewJsonBtn.addEventListener("click", async () => {
+      try {
+        const seller = await getSelectedSeller()
+        const buyer = await getSelectedBuyer()
 
-  viewJsonBtn.addEventListener("click", async () => {
-    
-    const seller = await getSelectedSeller()
-    const buyer = await getSelectedBuyer()
+        console.log("seller", seller)
+        console.log("buyer", buyer)
 
-    console.log("seller", seller)
-    console.log("buyer", buyer)
-
-
-   invoicePayload = {
-      invoiceType: DOMElements.invoiceType.value,
-      invoiceDate: DOMElements.invoiceDate.value,
-      sellerNTNCNIC: seller.ntn,
-      sellerBusinessName: seller.businessName,
-      sellerProvince: seller.province,
-      sellerAddress: seller.address,
-      buyerNTNCNIC: buyer.ntn,
-      buyerBusinessName: buyer.businessName,
-      buyerRegistrationType: buyer.registrationType,
-      buyerProvince: buyer.province,
-      buyerAddress: buyer.address,
-      invoiceRefNo: DOMElements.invoiceRef.value,
-      currency: DOMElements.currency.value,
-      items: items.map((item, index) => {
-        const value = item.quantity * item.unitPrice
-        const salesTaxApplicable = (value * item.taxRate) / 100
-        const totalValues = value + salesTaxApplicable
-
-        // Find the SRO schedule description
-        const sroSchedule = item.sroScheduleOptions
-          ? item.sroScheduleOptions.find((s) => s.srO_ID == item.sroSchedule)
-          : null
-        const sroScheduleNo = sroSchedule ? sroSchedule.srO_DESC : ""
-
-        // Find the SRO item description
-        const sroItemData = item.sroItemOptions
-          ? item.sroItemOptions.find((si) => si.srO_ITEM_ID == item.sroItem)
-          : null
-        const sroItemSerialNo = sroItemData ? sroItemData.srO_ITEM_DESC : ""
-
-        return {
-          itemSNo: (index + 1).toString(),
-          hsCode: item.hsCode,
-          productDescription: item.description,
-          rate: `${item?.taxRate?.toFixed(2)}%`,
-          uoM: item.uom || "",
-          quantity: item.quantity,
-          valueSalesExcludingST: value,
-          salesTaxApplicable: salesTaxApplicable,
-          salesTaxWithheldAtSource: 0,
-          extraTax: item.extraTax || 0,
-          furtherTax: item.furtherTax || 0,
-          totalValues: value + salesTaxApplicable + (item.extraTax || 0) + (item.furtherTax || 0) - (item.discount || 0),
-          sroScheduleNo: sroScheduleNo,
-          fedPayable: item.fedPayable || 0,
-          discount: item.discount || 0,
-          salesTaxWithheldAtSource: item.salesTaxWithheldAtSource || 0,
-          saleType: item.saleType || "Services",
-          sroItemSerialNo: sroItemSerialNo,
-          fixedNotifiedValueOrRetailPrice: 0,
+        if (!seller) {
+          showToast("error", "No Seller", "Please select a seller first")
+          return
         }
-      }),
-    }
 
-    if (!DOMElements.modeToggle.checked) {
-      invoicePayload.scenarioId = DOMElements.scenarioId.value
-    }
+        if (!buyer) {
+          showToast("error", "No Buyer", "Please select a buyer first")
+          return
+        }
 
-    jsonPayload.textContent = JSON.stringify(invoicePayload, null, 2)
-    jsonModal.classList.add("active")
-  })
-
-  closeJsonModal.addEventListener("click", () => jsonModal.classList.remove("active"))
-  closeJsonModalBtn.addEventListener("click", () => jsonModal.classList.remove("active"))
-
-  copyJsonBtn.addEventListener("click", () => {
-    navigator.clipboard
-      .writeText(jsonPayload.textContent)
-      .then(() => showToast("success", "Copied", "JSON payload copied to clipboard"))
-      .catch((err) => showToast("error", "Copy Failed", "Failed to copy JSON to clipboard"))
-  })
-
-  // Success Modal
-  const successModal = DOMElements.successModal
-  const closeSuccessModalBtn = DOMElements.closeSuccessModalBtn
-  const downloadInvoiceBtn = document.getElementById("downloadInvoiceBtn")
-  const copySuccessJsonBtn = document.getElementById("copySuccessJsonBtn")
-
-  // Handle modal close with cleanup
-  const handleSuccessModalClose = async () => {
-    // Hide the success modal
-    successModal.classList.remove("active");
-    
-    // Clear the success modal content
-    const respContainer = DOMElements.successResponseData;
-    if (respContainer) {
-      respContainer.innerHTML = '';
-    }
-    
-    // Reset the form to initial state
-    // await resetToInitialState();
-    
-    // Ensure create invoice tab is visible and active
-    switchToCreateInvoiceTab();
-    
-    // Clear any existing success messages
-    const successMessages = document.querySelectorAll('.toast.success');
-    successMessages.forEach(msg => msg.remove());
-  };
-  
-  closeSuccessModal.addEventListener("click", handleSuccessModalClose);
-  closeSuccessModalBtn.addEventListener("click", handleSuccessModalClose);
-
-  // Tab navigation for success modal
-  document.querySelectorAll(".tab-nav button").forEach((button) => {
-    button.addEventListener("click", function () {
-      document.querySelectorAll(".tab-nav button").forEach((btn) => btn.classList.remove("tab-active"))
-      document.querySelectorAll(".tab-content").forEach((tab) => tab.classList.remove("active"))
-      this.classList.add("tab-active")
-      document.getElementById(this.getAttribute("data-tab")).classList.add("active")
+        const { payload } = await generateInvoiceJSON()
+        if (jsonPayload) {
+          jsonPayload.textContent = JSON.stringify(payload, null, 2)
+        }
+        jsonModal.classList.add("active")
+      } catch (error) {
+        console.error('Error in viewJsonBtn click handler:', error)
+        showToast("error", "Error", "Failed to generate JSON preview")
+      }
     })
-  })
-
-  downloadInvoiceBtn.addEventListener("click", () => {
-     if (!lastSubmissionResponse || items.length === 0) {
-    showToast("error", "Missing Data", "Invoice or items data is not available.");
-    return;
   }
 
-  generateInvoicePDF();
-  })
-
-  copySuccessJsonBtn.addEventListener("click", () => {
-    const jsonContent = DOMElements.successResponseJson.textContent
-    navigator.clipboard
-      .writeText(jsonContent)
-      .then(() => showToast("success", "Copied", "JSON copied to clipboard"))
-      .catch(() => showToast("error", "Copy Failed", "Failed to copy JSON"))
-  })
+  if (closeJsonModal && jsonModal) {
+    closeJsonModal.addEventListener("click", () => jsonModal.classList.remove("active"))
+  }
+  
+  if (closeJsonModalBtn && jsonModal) {
+    closeJsonModalBtn.addEventListener("click", () => jsonModal.classList.remove("active"))
+  }
+  
+  if (copyJsonBtn && jsonPayload) {
+    copyJsonBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(jsonPayload.textContent)
+        .then(() => showToast("success", "Copied", "JSON copied to clipboard"))
+        .catch(() => showToast("error", "Error", "Failed to copy JSON"))
+    })
+  }
 }
 
   // Common layout configuration for both PDF and preview
@@ -4314,9 +4803,13 @@ function initModals() {
   
   
 async function generateInvoicePDF(response, isDummy = false, isPreview = false) {
-  // If no response is provided, use the lastSubmissionResponse
+  // If no response is provided, use window.currentInvoiceData or lastSubmissionResponse
   if (!response) {
-    response = lastSubmissionResponse;
+    response = window.currentInvoiceData || lastSubmissionResponse;
+  }
+  if (!response && !isDummy) {
+    showToast("warning", "No Invoice Data", "No invoice data available to generate invoice view/PDF.");
+    return;
   }
   if (!window.jspdf || !window.jspdf.jsPDF || !window.QRCode) {
     showToast("error", "PDF Error", "Required libraries (jsPDF or QRCode) not loaded");
@@ -4326,13 +4819,60 @@ async function generateInvoicePDF(response, isDummy = false, isPreview = false) 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // Get data
-  const seller = response?.seller || await getSelectedSeller();
-  const buyer = response?.buyer || await getSelectedBuyer();
-  const invoiceDate = formatDateForDisplay(response?.dated || response?.invoicePayload?.invoiceDate || DOMElements.invoiceDate.value);
-  const invoiceRef = response?.invoiceRefNo || response?.invoicePayload?.invoiceRefNo || DOMElements.invoiceRef.value;
-  const currency = response?.currency || DOMElements.currency.value;
-  const invoiceNumber = response?.invoiceNumber ||  "N/A";
+  // Resolve Seller robustly
+  let seller = response?.seller;
+  const sNTN = response?.sellerNTNCNIC || response?.invoicePayload?.sellerNTNCNIC;
+  if (!seller && sNTN) {
+    if (typeof globalSellers !== 'undefined' && globalSellers.length > 0) {
+      seller = globalSellers.find(s => s.ntn === sNTN || s.id === sNTN);
+    }
+    if (!seller && typeof dbGet === 'function') {
+      try {
+        seller = await dbGet(STORE_NAMES.sellers, sNTN);
+      } catch (e) {}
+    }
+  }
+  if (!seller && (response?.sellerBusinessName || response?.invoicePayload?.sellerBusinessName)) {
+    seller = {
+      businessName: response.sellerBusinessName || response.invoicePayload?.sellerBusinessName || '',
+      ntn: sNTN || '',
+      address: response.sellerAddress || response.invoicePayload?.sellerAddress || '',
+      province: response.sellerProvince || response.invoicePayload?.sellerProvince || ''
+    };
+  }
+  if (!seller && typeof getSelectedSeller === 'function') {
+    seller = await getSelectedSeller();
+  }
+
+  // Resolve Buyer robustly
+  let buyer = response?.buyer;
+  const bNTN = response?.buyerNTNCNIC || response?.invoicePayload?.buyerNTNCNIC;
+  if (!buyer && bNTN) {
+    if (typeof globalBuyers !== 'undefined' && globalBuyers.length > 0) {
+      buyer = globalBuyers.find(b => b.ntn === bNTN || b.id === bNTN);
+    }
+    if (!buyer && typeof dbGet === 'function') {
+      try {
+        buyer = await dbGet(STORE_NAMES.buyers, bNTN);
+      } catch (e) {}
+    }
+  }
+  if (!buyer && (response?.buyerBusinessName || response?.invoicePayload?.buyerBusinessName)) {
+    buyer = {
+      businessName: response.buyerBusinessName || response.invoicePayload?.buyerBusinessName || '',
+      ntn: bNTN || '',
+      address: response.buyerAddress || response.invoicePayload?.buyerAddress || '',
+      province: response.buyerProvince || response.invoicePayload?.buyerProvince || ''
+    };
+  }
+  if (!buyer && typeof getSelectedBuyer === 'function') {
+    buyer = await getSelectedBuyer();
+  }
+
+  const invoiceDate = formatDateForDisplay(response?.invoiceDate || response?.dated || response?.invoicePayload?.invoiceDate || response?.createdAt || DOMElements.invoiceDate?.value);
+  const invoiceRef = response?.invoiceRefNo || response?.invoicePayload?.invoiceRefNo || DOMElements.invoiceRef?.value || "N/A";
+  const currency = response?.currency || response?.invoicePayload?.currency || DOMElements.currency?.value || "PKR";
+  const invoiceNumber = response?.invoiceNumber || response?.fbrResponse?.invoiceNumber || response?.invoicePayload?.invoiceNumber || "N/A";
   const itemsList = response?.items || response?.invoicePayload?.items || items;
 
 
@@ -4728,21 +5268,23 @@ async function generateInvoicePDF(response, isDummy = false, isPreview = false) 
         </thead>
         <tbody>
           ${itemsList.map((item, idx) => {
-            const amount = Number(item.valueSalesExcludingST || (item.quantity * (item.unitPrice || 0)) || 0);
+            const qty = Number(item.quantity) || 1;
+            const amount = Number(item.valueSalesExcludingST ?? (qty * (Number(item.unitPrice) || 0)) ?? 0);
+            const unitPriceVal = Number(item.unitPrice) || (qty > 0 && amount > 0 ? (amount / qty) : (parseFloat(item.rate) || 0));
             const taxRateVal = Number(item.taxRate || parseFloat(item.rate) || 0);
-            const salesTaxAmt = Number(item.salesTaxApplicable || (amount * taxRateVal / 100) || 0);
+            const salesTaxAmt = Number(item.salesTaxApplicable ?? (amount * taxRateVal / 100) ?? 0);
             const extraTax = Number(item.extraTax || 0);
             const furtherTax = Number(item.furtherTax || 0);
             const discount = Number(item.discount || 0);
             const taxAmt = salesTaxAmt + extraTax + furtherTax;
-            const total = amount + taxAmt - discount;
+            const total = Number(item.totalValues) || (amount + taxAmt - discount);
             return `
               <tr>
                 <td>${idx + 1}</td>
                 <td>${item.hsCode || ''}</td>
                 <td class="description">${item.productDescription || item.description || ''}</td>
-                <td>${item.quantity}</td>
-                <td>${(item.unitPrice || parseFloat(item.rate) || 0).toFixed(2)}</td>
+                <td>${qty}</td>
+                <td>${unitPriceVal.toFixed(2)}</td>
                 <td>${amount.toFixed(2)}</td>
                 <td>${taxRateVal.toFixed(2)}%</td>
                 <td>${taxAmt.toFixed(2)}</td>
@@ -4856,7 +5398,20 @@ function initPreviewModal() {
   previewInvoiceBtn.id = "previewInvoiceBtn";
   const successModalFooter = document.querySelector("#successModal .modal-footer");
   if (successModalFooter) {
-    successModalFooter.insertBefore(previewInvoiceBtn, successModalFooter.querySelector("#downloadInvoiceBtn"));
+    // Try to find the left-buttons container first (new structure)
+    const leftButtons = successModalFooter.querySelector(".left-buttons");
+    if (leftButtons) {
+      leftButtons.appendChild(previewInvoiceBtn);
+    } else {
+      // Fallback: try to insert before download button (old structure)
+      const downloadBtn = successModalFooter.querySelector("#downloadInvoiceBtn");
+      if (downloadBtn) {
+        successModalFooter.insertBefore(previewInvoiceBtn, downloadBtn);
+      } else {
+        // Last resort: just append to footer
+        successModalFooter.appendChild(previewInvoiceBtn);
+      }
+    }
   }
 
   // Get references to JSON modal elements
@@ -5471,6 +6026,22 @@ const submitURL = isProduction ? API_URLS.submit.production : API_URLS.submit.sa
         // ✅ Show Modal
         // DOMElements.successModal.style.display = "block"
         DOMElements.successModal.classList.add("active")
+        
+        // Set default tab to table view after modal is displayed
+        setTimeout(() => {
+          try {
+            console.log('🏠 Setting default tab to table-tab from second success handler');
+            switchSuccessTab('table-tab');
+          } catch (error) {
+            console.warn('⚠️ Failed to set default tab from second success handler:', error);
+            // Fallback: manually set the table tab visible
+            const tableTab = document.getElementById('table-tab');
+            if (tableTab) {
+              tableTab.style.display = 'block';
+              tableTab.classList.add('active');
+            }
+          }
+        }, 350);
 
         // Store response for PDF generation
         lastSubmissionResponse = postResult
@@ -5503,12 +6074,34 @@ const submitURL = isProduction ? API_URLS.submit.production : API_URLS.submit.sa
         `
 
         errorContainer.style.display = "block"
-        throw new Error(vr?.error || "Validation failed")
+        
+        // Display error modal with detailed information
+        const errorMessage = vr?.error || "Validation failed";
+        const errorDetails = {
+          error: vr?.error || "Unknown error",
+          errorCode: vr?.errorCode || "-",
+          response: validateResponse
+        };
+        
+        handleSubmissionError(new Error(errorMessage), errorDetails);
+        return; // Don't throw, just return after handling
       }
     } catch (error) {
-
-      console.error("Submission error:", error)
-      showToast("error", "Submission Failed", error.message)
+      console.error("Submission error:", error);
+      
+      // Handle different types of errors
+      const errorMessage = error.message || "An unexpected error occurred during submission";
+      const errorDetails = {
+        message: errorMessage,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Show toast for immediate feedback
+      showToast("error", "Submission Failed", errorMessage);
+      
+      // Display detailed error modal
+      handleSubmissionError(error, errorDetails);
       
     } finally {
       submitBtn.innerHTML = originalContent
@@ -5539,6 +6132,9 @@ function initAPITesting() {
     SROItem: "https://gw.fbr.gov.pk/pdi/v2/SROItem",
     statl: "https://gw.fbr.gov.pk/dist/v1/statl",
     Get_Reg_Type: "https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type",
+    validateinvoicedata: API_URLS.validate,
+    postinvoicedata: API_URLS.submit,
+    getinvoicedata: API_URLS.invoiceStatus,
   }
 
   const endpointParams = {
@@ -5548,6 +6144,9 @@ function initAPITesting() {
     SROItem: ["date_iso", "sro_id"],
     statl: ["regno", "post_date"],
     Get_Reg_Type: ["Registration_No"],
+    validateinvoicedata: ["invoice_payload_json"],
+    postinvoicedata: ["invoice_payload_json"],
+    getinvoicedata: ["invoice_no"],
   }
 
   function setActiveEndpoint(endpoint) {
@@ -5560,6 +6159,50 @@ function initAPITesting() {
         paramElement.classList.add("visible")
       }
     })
+
+    // Pre-populate sample invoice payload if empty
+    if ((endpoint === "validateinvoicedata" || endpoint === "postinvoicedata") && document.getElementById("test_invoice_payload")) {
+      const payloadBox = document.getElementById("test_invoice_payload");
+      if (!payloadBox.value.trim()) {
+        try {
+          const sample = {
+            invoiceType: "Sale Invoice",
+            invoiceDate: getCurrentDate("YYYY-MM-DD"),
+            sellerNTNCNIC: "7908224",
+            sellerBusinessName: "HUSSAINI LOGISTICS ENTERPRISES (PRIVATE) LIMITED",
+            sellerProvince: "SINDH",
+            sellerAddress: "Rawalpindi",
+            buyerNTNCNIC: "0711554",
+            buyerBusinessName: "PAKISTAN STATE OIL COMPANY LIMITED",
+            buyerProvince: "SINDH",
+            buyerAddress: "Karachi",
+            buyerRegistrationType: "Registered",
+            invoiceRefNo: "SI-0001",
+            scenarioId: "SN018",
+            currency: "PKR",
+            items: [
+              {
+                itemSNo: "1",
+                hsCode: "9804.0000",
+                productDescription: "SERVICES PROVIDED OR RENDERED FOR INLAND CARRIAGE OF GOODS",
+                rate: "15.00%",
+                uoM: "",
+                quantity: 1,
+                valueSalesExcludingST: 1000,
+                salesTaxApplicable: 150,
+                salesTaxWithheldAtSource: 0,
+                extraTax: 0,
+                furtherTax: 0,
+                totalValues: 1150,
+                discount: 0,
+                saleType: "Services"
+              }
+            ]
+          };
+          payloadBox.value = JSON.stringify(sample, null, 2);
+        } catch (e) {}
+      }
+    }
   }
 
   endpointButtons.forEach((button) => {
@@ -5580,7 +6223,8 @@ function initAPITesting() {
   })
 
   testApiBtn.addEventListener("click", async () => {
-    const activeEndpoint = document.querySelector(".endpoint-btn.active").dataset.endpoint
+    const activeEndpoint = document.querySelector(".endpoint-btn.active")?.dataset.endpoint || "provinces"
+    const isProduction = DOMElements.modeToggle?.checked
    
     testApiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...'
     testApiBtn.disabled = true
@@ -5620,6 +6264,21 @@ function initAPITesting() {
         method = "POST"
         const Registration_No = document.getElementById("Registration_No").value
         body = JSON.stringify({ Registration_No: Registration_No })
+      } else if (activeEndpoint === "validateinvoicedata") {
+        method = "POST"
+        url = isProduction ? API_URLS.validate.production : API_URLS.validate.sandbox
+        const payloadText = document.getElementById("test_invoice_payload")?.value.trim()
+        body = payloadText || JSON.stringify(await getInvoicePayload())
+      } else if (activeEndpoint === "postinvoicedata") {
+        method = "POST"
+        url = isProduction ? API_URLS.submit.production : API_URLS.submit.sandbox
+        const payloadText = document.getElementById("test_invoice_payload")?.value.trim()
+        body = payloadText || JSON.stringify(await getInvoicePayload())
+      } else if (activeEndpoint === "getinvoicedata") {
+        method = "GET"
+        const base = isProduction ? API_URLS.invoiceStatus.production : API_URLS.invoiceStatus.sandbox
+        const invNo = document.getElementById("test_invoice_no")?.value.trim()
+        url = invNo ? `${base}?invoiceNumber=${encodeURIComponent(invNo)}` : base
       }
 
       const options = { method }
@@ -5877,11 +6536,25 @@ function filterByStatus(invoices, status) {
   if (status === 'all') return invoices;
   
   return invoices.filter(invoice => {
-    if (status === 'submitted') {
+    if (status === 'Submitted') {
       return invoice?.invoiceNumber != null;
+    } else if (status === 'Draft') {
+      return invoice?.invoiceNumber == null && (invoice.status === 'Draft' || invoice.status === undefined);
+    } else if (status === 'Failed') {
+      return invoice.status === 'Failed';
     } else {
       return invoice.status === status;
     }
+  });
+}
+
+// Filter invoices by type
+function filterByType(invoices, type) {
+  if (type === 'all') return invoices;
+  
+  return invoices.filter(invoice => {
+    const invoiceType = invoice?.invoiceType || invoice?.invoicePayload?.invoiceType || '';
+    return invoiceType === type;
   });
 }
 
@@ -5897,12 +6570,12 @@ function sortInvoices(field) {
     invoiceSortDirection = 'asc';
   }
   
-  // Update sort icons
-  document.querySelectorAll('[id^="sort-"]').forEach(icon => {
+  // Update sort icons for invoice table
+  document.querySelectorAll('[id^="sort-invoice-"]').forEach(icon => {
     icon.className = 'fas fa-sort';
   });
   
-  const sortIcon = document.getElementById(`sort-${field}`);
+  const sortIcon = document.getElementById(`sort-invoice-${field}`);
   if (sortIcon) {
     sortIcon.className = `fas fa-sort-${invoiceSortDirection === 'asc' ? 'up' : 'down'}`;
   }
@@ -5920,7 +6593,8 @@ async function populateInvoicesTable() {
 
   // Get filter values
   const searchTerm = document.getElementById('invoiceSearch')?.value || '';
-  const statusFilter = document.getElementById('statusFilter')?.value || 'all';
+  const statusFilter = document.getElementById('invoiceStatusFilter')?.value || 'all'; // Updated to correct ID
+  const typeFilter = document.getElementById('invoiceTypeFilter')?.value || 'all'; // Added type filter
   const dateFilter = document.getElementById('dateFilter')?.value || 'all';
   const dateFrom = document.getElementById('dateFrom')?.value;
   const dateTo = document.getElementById('dateTo')?.value;
@@ -5929,6 +6603,7 @@ async function populateInvoicesTable() {
   // Apply filters
   let filteredInvoices = searchInvoices(invoices, searchTerm);
   filteredInvoices = filterByStatus(filteredInvoices, statusFilter);
+  filteredInvoices = filterByType(filteredInvoices, typeFilter); // Added type filtering
   filteredInvoices = filterByDateRange(filteredInvoices, dateFilter, dateFrom, dateTo);
 
   // Apply sorting
@@ -6008,42 +6683,7 @@ async function populateInvoicesTable() {
       <button class="btn btn-primary" onclick="switchToCreateInvoiceTab()">Add Invoice</button>
     </td>`;
     tbody.appendChild(row);
-    // const paginationInfo = document.getElementById('invoicesPaginationInfo');
-    // if (paginationInfo) {
-    //   paginationInfo.textContent = 'Showing 0-0 of 0 items';
-    // }
     return;
-  }
-
-  // Update table header to include ID column with sorting
-  const thead = document.querySelector('#invoicesTable thead');
-  if (thead) {
-    thead.innerHTML = `
-      <tr>
-        <th style="cursor: pointer;" onclick="sortInvoices('id')">
-          ID <i class="fas fa-sort" id="sort-id"></i>
-        </th>
-        <th style="cursor: pointer;" onclick="sortInvoices('invoiceRefNo')">
-          Inv. Ref. No. <i class="fas fa-sort" id="sort-invoiceRefNo"></i>
-        </th>
-        <th style="cursor: pointer;" onclick="sortInvoices('invoiceDate')">
-          Date <i class="fas fa-sort" id="sort-invoiceDate"></i>
-        </th>
-        <th style="cursor: pointer;" onclick="sortInvoices('invoiceType')">
-          Inv. Type <i class="fas fa-sort" id="sort-invoiceType"></i>
-        </th>
-        <th style="cursor: pointer;" onclick="sortInvoices('totalAmount')">
-          Amount <i class="fas fa-sort" id="sort-totalAmount"></i>
-        </th>
-        <th style="cursor: pointer;" onclick="sortInvoices('status')">
-          Status <i class="fas fa-sort" id="sort-status"></i>
-        </th>
-        <th style="cursor: pointer;" onclick="sortInvoices('invoiceNumber')">
-          FBR Inv. No. <i class="fas fa-sort" id="sort-invoiceNumber"></i>
-        </th>
-        <th>Actions</th>
-      </tr>
-    `;
   }
 
   paginatedData.data.forEach((invoice) => {
@@ -6068,19 +6708,19 @@ async function populateInvoicesTable() {
       <td><span class="status-badge ${isSubmitted ? 'status-submitted' : 'status-draft'}">${statusText}</span></td>
       <td>${invoice?.invoiceNumber || invoice?.invoicePayload?.invoiceNumber || ''}</td>
       <td class="action-cell" style="white-space: nowrap;">
-        <button class="btn btn-sm btn-info" onclick="viewInvoice('${invoice?.id}')" title="View Invoice">
+        <button class="btn btn-view" onclick="viewInvoice('${invoice?.id}')" title="View Invoice">
           <i class="fas fa-eye"></i>
         </button>
-        <button class="btn btn-sm btn-warning" onclick="editInvoice('${invoice?.id}')" 
+        <button class="btn btn-edit" onclick="editInvoice('${invoice?.id}')" 
                 ${!isDraft ? 'disabled' : ''} title="Edit Invoice">
           <i class="fas fa-edit"></i>
         </button>
-        <button class="btn btn-sm btn-secondary" onclick="duplicateInvoice('${invoice?.id}')" 
+        <button class="btn btn-duplicate" onclick="duplicateInvoice('${invoice?.id}')" 
                 title="Duplicate Invoice">
           <i class="fas fa-copy"></i>
         </button>
         
-        <button class="btn btn-sm btn-danger" onclick="deleteInvoice('${invoice?.id}')" 
+        <button class="btn btn-delete" onclick="confirmDeleteInvoice('${invoice?.id}')" 
                 ${!isDraft ? 'disabled' : ''} title="Delete Invoice">
           <i class="fas fa-trash"></i>
         </button>
@@ -6095,11 +6735,14 @@ async function populateInvoicesTable() {
 
 
   if (paginationInfo) {
+    const perPageText = perPage === 'all' ? 'All' : perPage;
     if (perPage === 'all') {
-      paginationInfo.textContent = `Showing 1-${filteredInvoices.length} of ${filteredInvoices.length} items`;
+      paginationInfo.innerHTML = `Showing <select id="invoicesPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all" selected>All</option></select> of ${filteredInvoices.length} items`;
     } else {
-      paginationInfo.textContent = `Showing ${paginatedData.startIndex}-${paginatedData.endIndex} of ${paginatedData.totalItems} items`;
+      paginationInfo.innerHTML = `Showing <select id="invoicesPerPage" class="per-page-select"><option value="1"${perPage==='1'?' selected':''}>1</option><option value="10"${perPage==='10'?' selected':''}>10</option><option value="20"${perPage==='20'?' selected':''}>20</option><option value="50"${perPage==='50'?' selected':''}>50</option><option value="100"${perPage==='100'?' selected':''}>100</option><option value="all">All</option></select> of ${paginatedData.totalItems} items`;
     }
+    // Attach event listener after updating HTML
+    attachPerPageListeners();
   }
   
   createPaginationControls('invoicesPaginationControls', paginatedData.currentPage, paginatedData.totalPages, (page) => {
@@ -6231,28 +6874,57 @@ function createDashboardStructure() {
 // Create time analytics HTML structure
 function createTimeAnalyticsHTML() {
   const periods = [
-    { key: 'today', label: 'Today', icon: 'fas fa-calendar-day' },
-    { key: 'yesterday', label: 'Yesterday', icon: 'fas fa-calendar-minus' },
-    { key: 'thisWeek', label: 'This Week', icon: 'fas fa-calendar-week' },
-    { key: 'lastWeek', label: 'Last Week', icon: 'fas fa-calendar-alt' },
-    { key: 'thisMonth', label: 'This Month', icon: 'fas fa-calendar' },
-    { key: 'lastMonth', label: 'Last Month', icon: 'fas fa-calendar-times' },
-    { key: 'thisYear', label: 'This Year', icon: 'fas fa-calendar-check' },
-    { key: 'lastYear', label: 'Last Year', icon: 'fas fa-history' }
+    { key: 'today', label: 'Today', subLabel: 'Current Day', icon: 'fas fa-calendar-day', theme: 'theme-emerald' },
+    { key: 'yesterday', label: 'Yesterday', subLabel: 'Previous Day', icon: 'fas fa-history', theme: 'theme-amber' },
+    { key: 'thisWeek', label: 'This Week', subLabel: 'Current Week', icon: 'fas fa-calendar-week', theme: 'theme-blue' },
+    { key: 'lastWeek', label: 'Last Week', subLabel: 'Previous Week', icon: 'fas fa-calendar-minus', theme: 'theme-purple' },
+    { key: 'thisMonth', label: 'This Month', subLabel: 'Current Month', icon: 'fas fa-calendar-alt', theme: 'theme-cyan' },
+    { key: 'lastMonth', label: 'Last Month', subLabel: 'Previous Month', icon: 'fas fa-calendar-times', theme: 'theme-rose' },
+    { key: 'thisYear', label: 'This Year', subLabel: 'Current Year', icon: 'fas fa-calendar-check', theme: 'theme-teal' },
+    { key: 'lastYear', label: 'Last Year', subLabel: 'Previous Year', icon: 'fas fa-archive', theme: 'theme-slate' }
   ];
   
   return periods.map(period => `
-    <div class="analytics-card smart-card">
-      <div class="card-header">
-        <h4>${period.label}</h4>
+    <div class="analytics-card modern-stat-card ${period.theme}">
+      <div class="stat-card-glow"></div>
+      <div class="stat-card-top">
+        <div class="stat-card-title-wrap">
+          <div class="stat-icon-pill">
+            <i class="${period.icon}"></i>
+          </div>
+          <div class="stat-meta">
+            <h4 class="stat-period-name">${period.label}</h4>
+            <span class="stat-period-sub">${period.subLabel}</span>
+          </div>
+        </div>
+        <div class="stat-live-chip" title="Live sync active">
+          <span class="live-dot"></span>
+        </div>
       </div>
-      <div class="card-metrics">
-        <span id="${period.key}Count" class="count-value">0</span>
-        <span class="count-label">Invoices</span>
+
+      <div class="stat-hero-metric">
+        <div class="stat-count-box">
+          <span id="${period.key}Count" class="count-value no-invoices">0</span>
+          <span class="count-unit">Invoices</span>
+        </div>
       </div>
-      <div class="totals-section">
-        <span id="${period.key}Amount" class="total-value">PKR 0</span>
-        <span id="${period.key}Tax" class="tax-value">PKR 0</span>
+
+      <div class="stat-financials-grid">
+        <div class="fin-metric-chip fin-sales">
+          <div class="fin-header">
+            <i class="fas fa-coins"></i>
+            <span>Total Sales</span>
+          </div>
+          <div id="${period.key}Amount" class="fin-value total-value amount">PKR 0</div>
+        </div>
+
+        <div class="fin-metric-chip fin-tax">
+          <div class="fin-header">
+            <i class="fas fa-receipt"></i>
+            <span>Sales Tax</span>
+          </div>
+          <div id="${period.key}Tax" class="fin-value total-value tax">PKR 0</div>
+        </div>
       </div>
     </div>
   `).join('');
@@ -6304,7 +6976,8 @@ function getDateRanges() {
 // Filter invoices by date range
 function filterInvoicesByDateRange(invoices, startDate, endDate) {
   return invoices.filter(inv => {
-    const invDate = new Date(inv.dated || inv.invoiceDate || 0);
+    const rawDate = inv.invoiceDate || inv.dated || inv.invoicePayload?.invoiceDate || inv.createdAt || 0;
+    const invDate = new Date(rawDate);
     return invDate >= startDate && invDate <= endDate;
   });
 }
@@ -6330,6 +7003,7 @@ function calculatePeriodAnalytics(invoices) {
   return { count: invoices.length, amount: totalAmount, taxes: totalTaxes };
 }
 
+
 // Update time-based analytics
 function updateTimeBasedAnalytics() {
   const ranges = getDateRanges();
@@ -6354,11 +7028,21 @@ function updateTimeBasedAnalytics() {
     const taxElement = document.getElementById(`${period.key}Tax`);
     
     if (countElement) {
-      countElement.textContent = analytics.count;
-      countElement.className = analytics.count > 0 ? 'count-value has-invoices' : 'count-value no-invoices';
+      countElement.textContent = analytics.count.toLocaleString();
+      if (analytics.count > 0) {
+        countElement.classList.remove('no-invoices');
+        countElement.classList.add('has-invoices');
+      } else {
+        countElement.classList.remove('has-invoices');
+        countElement.classList.add('no-invoices');
+      }
     }
-    if (amountElement) amountElement.textContent = `PKR ${analytics.amount.toLocaleString()}`;
-    if (taxElement) taxElement.textContent = `PKR ${analytics.taxes.toLocaleString()}`;
+    if (amountElement) {
+      amountElement.textContent = `PKR ${analytics.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    }
+    if (taxElement) {
+      taxElement.textContent = `PKR ${analytics.taxes.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    }
   });
 }
 
@@ -6366,20 +7050,32 @@ function updateTimeBasedAnalytics() {
 
 // Latest Invoices - Top 10 by date
 function updateLatestInvoices() {
-  const latest = globalInvoices
-    .sort((a, b) => new Date(b.dated || b.invoiceDate || 0) - new Date(a.dated || a.invoiceDate || 0))
+  const latest = [...globalInvoices]
+    .sort((a, b) => new Date(b.invoiceDate || b.dated || b.invoicePayload?.invoiceDate || b.createdAt || 0) - new Date(a.invoiceDate || a.dated || a.invoicePayload?.invoiceDate || a.createdAt || 0))
     .slice(0, 10);
   
   const container = document.getElementById('latestInvoices');
   if (!container) return;
   
+  if (latest.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding: 15px; color:#888;">No invoices in record</div>';
+    return;
+  }
+  
   container.innerHTML = latest.map(inv => {
-    const amount = parseFloat(inv.totalAmount) || calculateTotalFromLineItems(inv.items || inv.invoicePayload?.items || []);
-    const status = inv.invoiceNumber ? 'Submitted' : 'Draft';
+    let amount = parseFloat(inv.totalAmount) || 0;
+    if (amount === 0) {
+      amount = calculateTotalFromLineItems(inv.items || inv.invoicePayload?.items || []);
+    }
+    const isSub = inv.invoiceNumber || inv.fbrResponse?.invoiceNumber;
+    const status = isSub ? 'Submitted' : (inv.status || 'Draft');
+    const dateStr = formatDateForDisplay(inv.invoiceDate || inv.dated || inv.invoicePayload?.invoiceDate || inv.createdAt);
+    const refStr = inv.invoiceRefNo || inv.invoicePayload?.invoiceRefNo || `ID-${inv.id}`;
+    
     return `
-      <div class="invoice-item-grid">
-        <span class="grid-date">${formatDateForDisplay(inv.dated || inv.invoiceDate)}</span>
-        <span class="grid-ref">${inv.invoiceRefNo || inv.invoicePayload?.invoiceRefNo || 'N/A'}</span>
+      <div class="invoice-item-grid" style="cursor: pointer;" onclick="viewInvoice('${inv.id}')" title="Click to view invoice">
+        <span class="grid-date">${dateStr}</span>
+        <span class="grid-ref">${refStr}</span>
         <span class="grid-amount">PKR ${amount.toFixed(2)}</span>
         <span class="grid-status ${status.toLowerCase()}">${status}</span>
       </div>`;
@@ -6473,11 +7169,11 @@ function updateInvoiceStatus() {
 // Initialize invoice filters
 function initInvoiceFilters() {
   const searchInput = document.getElementById('invoiceSearch');
-  const statusFilter = document.getElementById('statusFilter');
+  const statusFilter = document.getElementById('invoiceStatusFilter'); // Updated to correct ID
+  const typeFilter = document.getElementById('invoiceTypeFilter'); // Added type filter
   const dateFilter = document.getElementById('dateFilter');
   const customDateRange = document.getElementById('customDateRange');
   const applyDateFilter = document.getElementById('applyDateFilter');
-   const perPageFilter = document.getElementById('invoicesPerPage');
 
 
   // Handle search input
@@ -6487,6 +7183,11 @@ function initInvoiceFilters() {
 
   // Handle status filter
   statusFilter?.addEventListener('change', () => {
+    populateInvoicesTable();
+  });
+
+  // Handle type filter
+  typeFilter?.addEventListener('change', () => {
     populateInvoicesTable();
   });
 
@@ -6505,25 +7206,11 @@ function initInvoiceFilters() {
     populateInvoicesTable();
   });
 
-  // Handle filters
-  [perPageFilter].forEach(filter => {
-    filter?.addEventListener('change', () => {
-      currentInvoicesPage = 1;
-      populateInvoicesTable();
-    });
-  });
-
 }
 
 
-async function initApp() {
-
-
-  // Migrate old local storage data to IndexedDB
-  await migrateLocalStorageToIndexedDB();
-
-  // Set today's date as default invoice date
-  // DOMElements.invoiceDate.value = new Date().toISOString().split("T")[0];
+// Initial app setup - UI components and event listeners only
+async function initAppComponents() {
   // Set today's date as default invoice date
   DOMElements.invoiceDate.value = getCurrentDate('YYYY-MM-DD');
   
@@ -6553,86 +7240,19 @@ async function initApp() {
     if (postDateLabel) postDateLabel.innerHTML = `<i class="far fa-calendar-alt"></i> POST Date Format: YYYY-MM-DD (e.g. ${currentDateISO})`;
   }
 
-
-  // Initialize invoice filtersfunc
+  // Initialize UI components
   initInvoiceFilters();
-  
-  // Initialize seller filters
   initSellerFilters();
-  
-  // Initialize buyer filters
   initBuyerFilters();
-
-  // Initialize tab navigation
   initTabNavigation();
-
-  // Initialize modals
   initModals();
-  
-  // Initialize product modal
   initProductModal();
-  
-  // Load global data stores
-  globalProducts = await dbGetAll(STORE_NAMES.products);
-  globalSellers = await dbGetAll(STORE_NAMES.sellers);
-  globalInvoices = await dbGetAll(STORE_NAMES.invoices);
-  globalBuyers = await dbGetAll(STORE_NAMES.buyers);
-
-  // Initialize products table
-  await populateProductsTable();
-  
-  // Initialize product filters
   initProductFilters();
-
-  // Initialize form actions (add, remove, update items, etc.)
   initFormActions();
-
-  // Initialize API testing feature
   initAPITesting();
-  
-  // Load sellers and buyers from IndexedDB and populate respective selects
-  await populateSellerSelect();
-
-  const seller = await getSelectedSeller()
-
-  console.log(seller)
-  if (seller) {
-    await populateInvoiceScenarios(seller.ntn);
-  }
-  
-  await populateBuyerSelect();
-
-  // Load sellers from IndexedDB and populate table
-  await populateSellersTable();
-
-   // Load invoices on startup
-  await populateInvoicesTable();
-
-  // Initialize invoice preview modal
-  initPreviewModal(); // Includes addDownloadDummyInvoiceBtn
-
-  // Load buyers from IndexedDB and populate table
-  await populateBuyersTable();
-
-  // Update dashboard with loaded data
-  updateDashboard();
-
-  // Ensure that at least one seller is present in IndexedDB
-  if (globalSellers.length === 0) {
-    showToast("error", "No Sellers", "Please add at least one seller to proceed.");
-    populateProvinceSelects();
-    return; // Block further initialization if no sellers
-  }
-
-  // Use selected seller's token for loading provinces
-  const token = await getToken();
-
-  await loadProvinces(token);
-
-  // Load HSCodes, TransactionTypes and SROSchedules
-  await Promise.all([loadHSCodes(), loadTransactionTypes(), loadSROSchedules()]);
-
- 
+  initPreviewModal();
+  initDatabaseImportExport();
+  initConsoleLoggingToggle();
 
   // Toggle between production and sandbox environment
   DOMElements.modeToggle.addEventListener("change", () => {
@@ -6643,22 +7263,133 @@ async function initApp() {
       `You are now in ${isProduction ? "Production" : "Sandbox"} environment.`
     );
   });
+}
 
-  // Add dummy item to the invoice
-  await addNewItem();
-  
+// Populate tables and dashboard with data
+async function populateTablesAndDashboard() {
+  // Load global data stores
+  globalProducts = await dbGetAll(STORE_NAMES.products);
+  globalSellers = await dbGetAll(STORE_NAMES.sellers);
+  globalInvoices = await dbGetAll(STORE_NAMES.invoices);
+  globalBuyers = await dbGetAll(STORE_NAMES.buyers);
+
+  // If no sellers exist, prompt seller modal
+  if (globalSellers.length === 0) {
+    openAddSellerModal();
+    return;
+  }
+
+  // Populate all tables
+  await populateProductsTable();
+  await populateSellerSelect();
+  await populateBuyerSelect();
+  await populateSellersTable();
+  await populateInvoicesTable();
+  await populateBuyersTable();
+
+  // Update dashboard
+  updateDashboard();
+
+  // Setup seller-specific data
+  const seller = await getSelectedSeller();
+  if (seller) {
+    await populateInvoiceScenarios(seller.ntn);
+    const token = await getToken();
+    await loadProvinces(token);
+    await Promise.all([loadHSCodes(), loadTransactionTypes(), loadSROSchedules()]);
+  } else {
+    populateProvinceSelects();
+  }
+
   // Store initial app state
   initialAppState = {
     selectedSeller: globalSellers.length > 0 ? globalSellers[0].ntn : '',
     selectedBuyer: globalBuyers.length > 0 ? globalBuyers[0].ntn : '',
     invoiceType: 'Sale Invoice',
     currency: 'PKR'
-
   };
+}
 
-  // Show success message when initialization is complete
-  showToast("success", "System Ready", "FBR Digital Invoicing System initialized successfully");
-  console.log("FBR Digital Invoicing System initialized successfully");
+// Main initialization function
+async function initApp() {
+  try {
+    // Set backup timer to ensure loader is always hidden
+    setBackupLoaderTimer();
+    
+    // Show initial loader status
+    updateLoaderStatus('Initializing system...');
+    updateLoaderProgress(10);
+    
+    // Setup conditional console logging first
+    setupConditionalLogging();
+    
+    updateLoaderStatus('Setting up logging system...');
+    updateLoaderProgress(20);
+    
+    // Migrate old local storage data to IndexedDB
+    await migrateLocalStorageToIndexedDB();
+    
+    updateLoaderStatus('Migrating data...');
+    updateLoaderProgress(30);
+    
+    // Load console logging preference from IndexedDB
+    await loadConsoleLoggingSetting();
+    
+    updateLoaderStatus('Loading preferences...');
+    updateLoaderProgress(40);
+    
+    // Initialize UI components first
+    await initAppComponents();
+    
+    updateLoaderStatus('Initializing components...');
+    updateLoaderProgress(60);
+
+    // Check if database needs seeding on first run (empty database)
+    const existingSellers = await dbGetAll(STORE_NAMES.sellers);
+    const existingInvoices = await dbGetAll(STORE_NAMES.invoices);
+    if ((!existingSellers || existingSellers.length === 0) && (!existingInvoices || existingInvoices.length === 0)) {
+      updateLoaderStatus('Loading sample data from backup...');
+      await seedDatabaseFromBackup('fbr-invoice-backup-2025-08-26_17-27-15.json', false);
+    }
+    
+    // Load data and populate tables/dashboard
+    await populateTablesAndDashboard();
+
+    updateLoaderStatus('Loading data and dashboard...');
+    updateLoaderProgress(80);
+
+    // Add dummy item to the invoice
+    await addNewItem();
+
+    updateLoaderStatus('Finalizing setup...');
+    updateLoaderProgress(90);
+    
+    // Log sample invoices after app is fully loaded
+    await logSampleInvoices();
+    
+    updateLoaderStatus('Application ready!');
+    updateLoaderProgress(100);
+    
+    // Hide loader after a brief delay to show completion
+    setTimeout(() => {
+      hideLoader();
+    }, 300);
+
+    // Show success message when initialization is complete
+    showToast("success", "System Ready", "FBR Digital Invoicing System initialized successfully");
+    console.log("FBR Digital Invoicing System initialized successfully");
+    
+  } catch (error) {
+    console.error('Error during app initialization:', error);
+    updateLoaderStatus('Error occurred - hiding loader...');
+    
+    // Always force remove loader immediately on error
+    setTimeout(() => {
+      forceRemoveLoader();
+    }, 500);
+    
+    showToast("error", "Initialization Error", "App loaded with some issues. Check console for details.");
+  }
 }
 
 // Update UI elements based on the current theme
@@ -6671,7 +7402,7 @@ function updateThemeDependentElements(theme) {
     logoIcon.style.color = isDark ? '#1a3a8f' : '#0052A5';
   }
   
-  // Update any other theme-dependent elements as needed
+  // Update CSS variables for dynamic theming
   document.documentElement.style.setProperty('--fbr-blue', isDark ? '#1a3a8f' : '#0052A5');
   document.documentElement.style.setProperty('--fbr-red', isDark ? '#c62828' : '#E31837');
   document.documentElement.style.setProperty('--fbr-light-blue', isDark ? '#1a237e' : '#e6f0ff');
@@ -6680,6 +7411,36 @@ function updateThemeDependentElements(theme) {
   document.documentElement.style.setProperty('--fbr-orange', isDark ? '#ef6c00' : '#ff9800');
   document.documentElement.style.setProperty('--fbr-gray', isDark ? '#1e1e1e' : '#f8f9fa');
   document.documentElement.style.setProperty('--fbr-dark', isDark ? '#e0e0e0' : '#343a40');
+  
+  // Force refresh of any dynamically created elements
+  const modals = document.querySelectorAll('.modal, .modal-content');
+  modals.forEach(modal => {
+    // Trigger a reflow to ensure styles are applied
+    modal.style.display = modal.style.display;
+  });
+  
+  // Update any toast notifications that might be visible
+  const toasts = document.querySelectorAll('.toast');
+  toasts.forEach(toast => {
+    toast.style.display = toast.style.display;
+  });
+}
+
+// Force refresh theme on all elements
+function forceThemeRefresh() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  
+  // Temporarily remove and re-add the theme attribute to force re-rendering
+  document.documentElement.removeAttribute('data-theme');
+  
+  // Use requestAnimationFrame to ensure DOM update
+  requestAnimationFrame(() => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    updateThemeDependentElements(currentTheme);
+    
+    // Show a toast to confirm theme change
+    showToast('info', 'Theme Updated', `${currentTheme === 'dark' ? 'Dark' : 'Light'} theme applied successfully`);
+  });
 }
 
 
@@ -6703,10 +7464,25 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Update UI elements that might need theme-specific changes
       updateThemeDependentElements(theme);
+      
+      // Force refresh to ensure all elements are properly themed
+      setTimeout(() => {
+        forceThemeRefresh();
+      }, 100);
     });
   }
 
+  // Initialize app
   initApp();
+  
+  // Add emergency loader removal after 5 seconds as ultimate fallback
+  setTimeout(() => {
+    const loader = document.getElementById('appLoader');
+    if (loader) {
+      console.warn('Emergency: Force removing loader after 5 seconds');
+      forceRemoveLoader();
+    }
+  }, 5000);
   
   // Product modal is now initialized in initProductModal()
 });
@@ -6723,11 +7499,24 @@ function sortProducts(field) {
     window.productSortField = field;
     window.productSortDirection = 'asc';
   }
+  
+  // Update sort icons for product table
+  document.querySelectorAll('[id^="sort-product-"]').forEach(icon => {
+    icon.className = 'fas fa-sort';
+  });
+  
+  const sortIcon = document.getElementById(`sort-product-${field}`);
+  if (sortIcon) {
+    sortIcon.className = `fas fa-sort-${window.productSortDirection === 'asc' ? 'up' : 'down'}`;
+  }
+  
   window.populateProductsTable();
 }
 
 // Make function globally available
 window.sortProducts = sortProducts;
+window.populateTablesAndDashboard = populateTablesAndDashboard;
+window.initAppComponents = initAppComponents;
 
 
 // Populate products table with pagination
@@ -6785,7 +7574,8 @@ window.populateProductsTable = async function populateProductsTable() {
     tbody.appendChild(row);
     const paginationInfo = document.getElementById('productsPaginationInfo');
     if (paginationInfo) {
-      paginationInfo.textContent = 'Showing 0-0 of 0 items';
+      paginationInfo.innerHTML = 'Showing <select id="productsPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="100">100</option><option value="all">All</option></select> of 0 items';
+      attachPerPageListeners();
     }
     return;
   }
@@ -6808,13 +7598,13 @@ window.populateProductsTable = async function populateProductsTable() {
       <td>${stockDisplay}</td>
       <td><span class="status-badge ${product.status === 'Active' ? 'status-active' : 'status-inactive'}">${product.status || 'Active'}</span></td>
       <td class="action-cell">
-        <button class="btn btn-sm btn-primary" onclick="addProductToInvoiceFromTable('${product.id}')" title="Add to Invoice">
+        <button class="btn btn-view" onclick="addProductToInvoiceFromTable('${product.id}')" title="Add to Invoice">
           <i class="fas fa-plus"></i>
         </button>
-        <button class="btn btn-sm btn-warning" onclick="editProduct('${product.id}')">
+        <button class="btn btn-edit" onclick="editProduct('${product.id}')" title="Edit Product">
           <i class="fas fa-edit"></i>
         </button>
-        <button class="btn btn-sm btn-danger" onclick="deleteProduct('${product.id}')">
+        <button class="btn btn-delete" onclick="confirmDeleteProduct('${product.id}')" title="Delete Product">
           <i class="fas fa-trash"></i>
         </button>
       </td>
@@ -6825,11 +7615,14 @@ window.populateProductsTable = async function populateProductsTable() {
   // Update pagination info and controls
   const paginationInfo = document.getElementById('productsPaginationInfo');
   if (paginationInfo) {
+    const perPageText = perPage === 'all' ? 'All' : perPage;
     if (perPage === 'all') {
-      paginationInfo.textContent = `Showing 1-${filteredProducts.length} of ${filteredProducts.length} items`;
+      paginationInfo.innerHTML = `Showing <select id="productsPerPage" class="per-page-select"><option value="1">1</option><option value="10">10</option><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all" selected>All</option></select> of ${filteredProducts.length} items`;
     } else {
-      paginationInfo.textContent = `Showing ${paginatedData.startIndex}-${paginatedData.endIndex} of ${paginatedData.totalItems} items`;
+      paginationInfo.innerHTML = `Showing <select id="productsPerPage" class="per-page-select"><option value="1"${perPage==='1'?' selected':''}>1</option><option value="10"${perPage==='10'?' selected':''}>10</option><option value="20"${perPage==='20'?' selected':''}>20</option><option value="50"${perPage==='50'?' selected':''}>50</option><option value="100"${perPage==='100'?' selected':''}>100</option><option value="all">All</option></select> of ${paginatedData.totalItems} items`;
     }
+    // Attach event listener after updating HTML
+    attachPerPageListeners();
   }
   
   createPaginationControls('productsPaginationControls', paginatedData.currentPage, paginatedData.totalPages, (page) => {
@@ -6837,4 +7630,1874 @@ window.populateProductsTable = async function populateProductsTable() {
     populateProductsTable();
   });
 }
+// Helper function to get current date in specified format
+function getBackupFileName() {
+  const now = new Date();
+  const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
+  const time = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+  return `fbr-invoice-backup-${date}_${time}.json`;
+}
 
+// Function to export the entire database as a JSON file
+async function exportDatabase() {
+  const data = {};
+  for (const storeName of Object.values(STORE_NAMES)) {
+    data[storeName] = await dbGetAll(storeName);
+  }
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = getBackupFileName();
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Function to import a database from a JSON file
+async function importDatabase(file) {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    for (const storeName of Object.values(STORE_NAMES)) {
+      if (data[storeName]) {
+        await dbSetAll(storeName, data[storeName]);
+      }
+    }
+    
+    // Clear existing items before reloading
+    items = [];
+    itemCounter = 0;
+    
+    // Only reload data and populate tables, don't reinitialize entire app
+    await populateTablesAndDashboard();
+    showToast("success", "Import Complete", "Database imported successfully!");
+  } catch (err) {
+    console.error("Import error:", err);
+    showToast("error", "Import Failed", err.message);
+  }
+}
+
+// Function to seed database from sample backup JSON
+async function seedDatabaseFromBackup(backupUrl = 'fbr-invoice-backup-2025-08-26_17-27-15.json', notify = true) {
+  try {
+    const res = await fetch(backupUrl);
+    if (!res.ok) throw new Error(`HTTP error ${res.status} when loading ${backupUrl}`);
+    const data = await res.json();
+    
+    for (const storeName of Object.values(STORE_NAMES)) {
+      if (data[storeName] && Array.isArray(data[storeName]) && data[storeName].length > 0) {
+        await dbSetAll(storeName, data[storeName]);
+      }
+    }
+    
+    // Clear active in-memory form items
+    items = [];
+    itemCounter = 0;
+    
+    // Refresh global in-memory stores and UI
+    await populateTablesAndDashboard();
+    
+    if (notify) {
+      showToast("success", "Sample Data Loaded", "Database populated with sample invoices, sellers, buyers, and products!");
+    }
+    console.log("✓ Sample database seeded successfully from", backupUrl);
+    return true;
+  } catch (err) {
+    console.error("Error seeding sample data:", err);
+    if (notify) {
+      showToast("error", "Seeding Failed", err.message);
+    }
+    return false;
+  }
+}
+window.seedDatabaseFromBackup = seedDatabaseFromBackup;
+
+// Console logging management
+let isConsoleLoggingEnabled = false;
+const originalConsoleLog = console.log;
+const originalConsoleWarn = console.warn;
+const originalConsoleError = console.error;
+const originalConsoleInfo = console.info;
+
+// Enhanced console wrapper that respects the toggle setting
+function conditionalLog(originalFunction, ...args) {
+  if (isConsoleLoggingEnabled) {
+    originalFunction.apply(console, args);
+  }
+}
+
+// Override console methods to use conditional logging
+function setupConditionalLogging() {
+  console.log = (...args) => conditionalLog(originalConsoleLog, ...args);
+  console.warn = (...args) => conditionalLog(originalConsoleWarn, ...args);
+  console.error = (...args) => conditionalLog(originalConsoleError, ...args);
+  console.info = (...args) => conditionalLog(originalConsoleInfo, ...args);
+}
+
+// Load console logging preference from IndexedDB
+async function loadConsoleLoggingSetting() {
+  try {
+    const setting = await dbGet(STORE_NAMES.preferences, 'consoleLogging');
+    isConsoleLoggingEnabled = setting ? setting.value : false;
+    updateConsoleLoggingUI();
+  } catch (error) {
+    // If there's an error loading the setting, default to false
+    isConsoleLoggingEnabled = false;
+    updateConsoleLoggingUI();
+  }
+}
+
+// Save console logging preference to IndexedDB
+async function saveConsoleLoggingSetting(enabled) {
+  try {
+    await dbSet(STORE_NAMES.preferences, {
+      key: 'consoleLogging',
+      value: enabled,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    originalConsoleError('Failed to save console logging setting:', error);
+  }
+}
+
+// Update the UI to reflect current console logging state
+function updateConsoleLoggingUI() {
+  const toggle = document.getElementById('consoleLoggingToggle');
+  const status = document.getElementById('consoleLoggingStatus');
+  
+  if (toggle) {
+    toggle.checked = isConsoleLoggingEnabled;
+  }
+  
+  if (status) {
+    status.textContent = `Console Logging: ${isConsoleLoggingEnabled ? 'Enabled' : 'Disabled'}`;
+    status.style.color = isConsoleLoggingEnabled ? '#28a745' : '#6c757d';
+  }
+}
+
+// Toggle console logging on/off
+async function toggleConsoleLogging() {
+  isConsoleLoggingEnabled = !isConsoleLoggingEnabled;
+  await saveConsoleLoggingSetting(isConsoleLoggingEnabled);
+  updateConsoleLoggingUI();
+  
+  // Show a toast notification
+  showToast(
+    isConsoleLoggingEnabled ? 'success' : 'info',
+    'Console Logging',
+    `Console logging ${isConsoleLoggingEnabled ? 'enabled' : 'disabled'}`
+  );
+  
+  // Log a test message if logging was just enabled
+  if (isConsoleLoggingEnabled) {
+    console.log('Console logging is now enabled. Debug information will be visible in the browser console.');
+  }
+}
+
+// Get and log sample invoices with different statuses
+async function logSampleInvoices() {
+  try {
+    const allInvoices = await dbGetAll(STORE_NAMES.invoices);
+    
+    // Find one draft and one submitted invoice
+    const draftInvoice = allInvoices.find(inv => inv.status === 'draft' || inv.status === 'Draft');
+    const submittedInvoice = allInvoices.find(inv => inv.status === 'submitted' || inv.status === 'Submitted');
+    
+    console.log('=== Sample Invoices Loaded ===');
+    
+    if (draftInvoice) {
+      console.log('📄 Draft Invoice Found:');
+      console.log({
+        id: draftInvoice.id,
+        invoiceRefNo: draftInvoice.invoiceRefNo,
+        date: draftInvoice.invoiceDate || draftInvoice.dated,
+        buyerName: draftInvoice.buyerBusinessName,
+        totalAmount: draftInvoice.totalAmount,
+        status: draftInvoice.status,
+        itemCount: draftInvoice.invoicePayload?.items?.length || draftInvoice.items?.length || 0
+      });
+    } else {
+      console.log('📄 No draft invoice found in database');
+    }
+    
+    if (submittedInvoice) {
+      console.log('✅ Submitted Invoice Found:');
+      console.log({
+        id: submittedInvoice.id,
+        invoiceRefNo: submittedInvoice.invoiceRefNo,
+        invoiceNumber: submittedInvoice.invoiceNumber,
+        date: submittedInvoice.invoiceDate || submittedInvoice.dated,
+        buyerName: submittedInvoice.buyerBusinessName,
+        totalAmount: submittedInvoice.totalAmount,
+        status: submittedInvoice.status,
+        itemCount: submittedInvoice.invoicePayload?.items?.length || submittedInvoice.items?.length || 0
+      });
+    } else {
+      console.log('✅ No submitted invoice found in database');
+    }
+    
+    console.log(`Total invoices in database: ${allInvoices.length}`);
+    console.log('=== End Sample Invoices ===');
+    
+  } catch (error) {
+    console.error('Error loading sample invoices:', error);
+  }
+}
+
+// Initialize console logging toggle
+function initConsoleLoggingToggle() {
+  const toggle = document.getElementById('consoleLoggingToggle');
+  
+  if (toggle) {
+    toggle.addEventListener('change', toggleConsoleLogging);
+  }
+}
+
+// Initialize database import/export
+function initDatabaseImportExport() {
+  const exportBtn = document.getElementById('exportDatabaseBtn')
+  const importBtn = document.getElementById('importDatabaseBtn')
+  const importFile = document.getElementById('importDatabaseFile')
+  const importFileName = document.getElementById('importFileName')
+    const clearBtn = document.getElementById('clearDatabaseBtn');
+
+  
+  if (exportBtn) {
+    exportBtn.addEventListener('click', exportDatabase)
+  }
+  
+  if (importBtn && importFile) {
+    importBtn.addEventListener('click', () => {
+      importFile.click()
+    })
+    
+    importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0]
+      if (file) {
+        if (importFileName) {
+          importFileName.textContent = file.name
+        }
+        
+        if (confirm(`Import data from ${file.name}? This will merge with existing data.`)) {
+          importDatabase(file)
+        }
+        
+        // Reset file input
+        e.target.value = ''
+      }
+    })
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', clearDatabase);
+  }
+}
+
+
+// Clear database function
+async function clearDatabase() {
+  const confirmed = confirm(
+    'Are you sure you want to clear ALL data from the database?\n\n' +
+    'This will permanently delete:\n' +
+    '• All sellers\n' +
+    '• All buyers\n' +
+    '• All invoices\n' +
+    '• All products\n' +
+    '• All preferences\n' +
+    '• All logs\n\n' +
+    'This action cannot be undone!'
+  );
+
+  if (!confirmed) return;
+
+  const doubleConfirm = confirm(
+    'FINAL WARNING: This will delete ALL your data!\n\n' +
+    'Are you absolutely sure you want to proceed?'
+  );
+
+  if (!doubleConfirm) return;
+
+  try {
+    // Delete the entire database
+    const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+    
+    deleteRequest.onsuccess = async () => {
+      showToast('success', 'Database Cleared', 'All data has been permanently deleted');
+      
+      // Reload the page to reinitialize the database
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    };
+
+    deleteRequest.onerror = (event) => {
+      console.error('Error deleting database:', event);
+      showToast('error', 'Clear Failed', 'Failed to clear database');
+    };
+
+    deleteRequest.onblocked = () => {
+      showToast('warning', 'Database Blocked', 'Please close all other tabs with this application and try again');
+    };
+
+  } catch (error) {
+    console.error('Clear database error:', error);
+    showToast('error', 'Clear Failed', 'Failed to clear database: ' + error.message);
+  }
+}
+
+// Export functionality
+window.exportData = async (dataType, format) => {
+  try {
+    let data = [];
+    let filename = '';
+    let headers = [];
+    
+    // Get filtered data based on current table view
+    switch (dataType) {
+      case 'invoices':
+        data = await getFilteredInvoices();
+        filename = `invoices_${getCurrentDate()}`;
+        headers = ['Date', 'Reference', 'Buyer', 'Total', 'Status', 'FBR Invoice Number'];
+        break;
+      case 'products':
+        data = await getFilteredProducts();
+        filename = `products_${getCurrentDate()}`;
+        headers = ['HS Code', 'Product Name', 'Type', 'UoM', 'Purchase Rate', 'Sale Rate', 'Tax Rate', 'Stock', 'Status'];
+        break;
+      case 'sellers':
+        data = await getFilteredSellers();
+        filename = `sellers_${getCurrentDate()}`;
+        headers = ['NTN', 'Business Name', 'Province', 'Status', 'Registration Type'];
+        break;
+      case 'buyers':
+        data = await getFilteredBuyers();
+        filename = `buyers_${getCurrentDate()}`;
+        headers = ['NTN', 'Business Name', 'Province', 'Registration Type', 'Status'];
+        break;
+    }
+    
+    if (data.length === 0) {
+      showToast('warning', 'No Data', 'No data available to export');
+      return;
+    }
+    
+    switch (format) {
+      case 'json':
+        exportToJSON(data, filename);
+        break;
+      case 'excel':
+        exportToExcel(data, headers, filename);
+        break;
+      case 'pdf':
+        if (dataType === 'invoices') {
+          exportInvoicesToPDF(data, filename);
+        } else {
+          exportToPDF(data, headers, filename, dataType);
+        }
+        break;
+    }
+    
+    showToast('success', 'Export Complete', `${dataType} exported successfully as ${format.toUpperCase()}`);
+  } catch (error) {
+    console.error('Export error:', error);
+    showToast('error', 'Export Failed', error.message || 'Failed to export data');
+  }
+};
+
+// Get filtered data functions
+async function getFilteredInvoices() {
+  const allInvoices = await dbGetAll(STORE_NAMES.invoices);
+  const searchTerm = document.getElementById('invoiceSearch')?.value || '';
+  const statusFilter = document.getElementById('statusFilter')?.value || 'all';
+  
+  return allInvoices.filter(invoice => {
+    const matchesSearch = !searchTerm || 
+      (invoice.invoiceRefNo || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice.buyerBusinessName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  }).map(invoice => ({
+    id: invoice.id,
+    date: formatDateForDisplay(invoice.dated || invoice.invoiceDate),
+    reference: invoice.invoiceRefNo || '',
+    buyer: invoice.buyerBusinessName || '',
+    total: `${(invoice.totalAmount || 0).toFixed(2)} PKR`,
+    status: invoice.status || 'draft',
+    fbrInvoiceNumber: invoice.invoiceNumber || 'N/A'
+  }));
+}
+
+async function getFilteredProducts() {
+  const allProducts = await dbGetAll(STORE_NAMES.products);
+  const searchTerm = document.getElementById('productSearch')?.value || '';
+  const typeFilter = document.getElementById('productTypeFilter')?.value || 'all';
+  const statusFilter = document.getElementById('productStatusFilter')?.value || 'all';
+  
+  return allProducts.filter(product => {
+    const matchesSearch = !searchTerm || 
+      (product.hsCode || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.productName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = typeFilter === 'all' || product.productType === typeFilter;
+    const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
+    
+    return matchesSearch && matchesType && matchesStatus;
+  }).map(product => ({
+    hsCode: product.hsCode || '',
+    productName: product.productName || '',
+    type: product.productType || '',
+    uom: product.uom || '',
+    purchaseRate: (product.purchaseRate || 0).toFixed(2),
+    saleRate: (product.saleRate || 0).toFixed(2),
+    taxRate: `${(product.taxRate || 0).toFixed(2)}%`,
+    stock: product.openingStock || 0,
+    status: product.status || 'Active'
+  }));
+}
+
+async function getFilteredSellers() {
+  const allSellers = await dbGetAll(STORE_NAMES.sellers);
+  const searchTerm = document.getElementById('sellerSearch')?.value || '';
+  const provinceFilter = document.getElementById('sellerProvinceFilter')?.value || 'all';
+  const statusFilter = document.getElementById('sellerStatusFilter')?.value || 'all';
+  
+  return allSellers.filter(seller => {
+    const matchesSearch = !searchTerm || 
+      (seller.ntn || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (seller.businessName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesProvince = provinceFilter === 'all' || seller.province === provinceFilter;
+    const matchesStatus = statusFilter === 'all' || seller.registrationStatus === statusFilter;
+    
+    return matchesSearch && matchesProvince && matchesStatus;
+  }).map(seller => ({
+    ntn: seller.ntn || '',
+    businessName: seller.businessName || '',
+    province: seller.province || '',
+    status: seller.registrationStatus || 'Unknown',
+    registrationType: seller.registrationType || 'Unknown'
+  }));
+}
+
+async function getFilteredBuyers() {
+  const allBuyers = await dbGetAll(STORE_NAMES.buyers);
+  const searchTerm = document.getElementById('buyerSearch')?.value || '';
+  const provinceFilter = document.getElementById('buyerProvinceFilter')?.value || 'all';
+  const statusFilter = document.getElementById('buyerStatusFilter')?.value || 'all';
+  
+  return allBuyers.filter(buyer => {
+    const matchesSearch = !searchTerm || 
+      (buyer.ntn || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (buyer.businessName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesProvince = provinceFilter === 'all' || buyer.province === provinceFilter;
+    const matchesStatus = statusFilter === 'all' || buyer.registrationStatus === statusFilter;
+    
+    return matchesSearch && matchesProvince && matchesStatus;
+  }).map(buyer => ({
+    ntn: buyer.ntn || '',
+    businessName: buyer.businessName || '',
+    province: buyer.province || '',
+    registrationType: buyer.registrationType || '',
+    status: buyer.registrationStatus || 'Unknown'
+  }));
+}
+
+// Export to JSON
+function exportToJSON(data, filename) {
+  const jsonString = JSON.stringify(data, null, 2);
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  
+  // Generate filename with date and time
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+  const filenameWithTimestamp = `${filename}_${timestamp}`;
+  
+  a.download = `${filenameWithTimestamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Export to Excel (CSV format)
+function exportToExcel(data, headers, filename) {
+  let csvContent = headers.join(',') + '\n';
+  
+  data.forEach(row => {
+    const values = headers.map(header => {
+      const key = header.toLowerCase().replace(/\s+/g, '');
+      let value = '';
+      
+      // Map headers to data keys
+      switch (key) {
+        case 'date': value = row.date || ''; break;
+        case 'reference': value = row.reference || ''; break;
+        case 'buyer': value = row.buyer || ''; break;
+        case 'total': value = row.total || ''; break;
+        case 'status': value = row.status || ''; break;
+        case 'fbrinvoicenumber': value = row.fbrInvoiceNumber || ''; break;
+        case 'hscode': value = row.hsCode || ''; break;
+        case 'productname': value = row.productName || ''; break;
+        case 'type': value = row.type || ''; break;
+        case 'uom': value = row.uom || ''; break;
+        case 'purchaserate': value = row.purchaseRate || ''; break;
+        case 'salerate': value = row.saleRate || ''; break;
+        case 'taxrate': value = row.taxRate || ''; break;
+        case 'stock': value = row.stock || ''; break;
+        case 'ntn': value = row.ntn || ''; break;
+        case 'businessname': value = row.businessName || ''; break;
+        case 'province': value = row.province || ''; break;
+        case 'registrationtype': value = row.registrationType || ''; break;
+        default: value = row[key] || '';
+      }
+      
+      // Escape commas and quotes
+      if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+        value = `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    });
+    csvContent += values.join(',') + '\n';
+  });
+  
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  
+  // Generate filename with date and time
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+  const filenameWithTimestamp = `${filename}_${timestamp}`;
+  
+  a.download = `${filenameWithTimestamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Export to PDF
+async function exportToPDF(data, headers, filename, dataType) {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    showToast('error', 'PDF Error', 'PDF library not loaded');
+    return;
+  }
+  
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  
+  // Set default border properties - thin black borders
+  doc.setLineWidth(0.1);
+  doc.setDrawColor(0, 0, 0); // Black color
+  
+  // Get selected seller information
+  let sellerInfo = null;
+  try {
+    sellerInfo = await getSelectedSeller();
+  } catch (error) {
+    console.warn('Could not get seller information:', error);
+  }
+  
+  // Enhanced header with seller information
+  let y = 15;
+  const pageWidth = doc.internal.pageSize.width;
+  const margin = 20;
+  
+  // Company header (if seller info available)
+  if (sellerInfo && sellerInfo.businessName) {
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 0, 0); // Black text
+    const businessNameLines = doc.splitTextToSize(sellerInfo.businessName, pageWidth - 2 * margin);
+    businessNameLines.forEach(line => {
+      doc.text(line, pageWidth / 2, y, { align: 'center' });
+      y += 7;
+    });
+    
+    // Seller NTN and Address
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(60, 60, 60); // Dark gray text
+    
+    let sellerDetails = [];
+    if (sellerInfo.ntn) sellerDetails.push(`NTN: ${sellerInfo.ntn}`);
+    if (sellerInfo.address) sellerDetails.push(sellerInfo.address);
+    if (sellerInfo.province) sellerDetails.push(sellerInfo.province);
+    
+    if (sellerDetails.length > 0) {
+      const sellerDetailText = sellerDetails.join(' | ');
+      const sellerDetailLines = doc.splitTextToSize(sellerDetailText, pageWidth - 2 * margin);
+      sellerDetailLines.forEach(line => {
+        doc.text(line, pageWidth / 2, y, { align: 'center' });
+        y += 5;
+      });
+    }
+    
+    y += 5;
+    
+    // Add separator line - thin black
+    doc.setLineWidth(0.2);
+    doc.setDrawColor(0, 0, 0);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 10;
+  }
+  
+  // Main title
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(0, 0, 0);
+  const titleText = `${dataType.charAt(0).toUpperCase() + dataType.slice(1)} Export Report`;
+  doc.text(titleText, margin, y);
+  y += 10;
+  
+  // Generation info
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(60, 60, 60);
+  const dateText = `Generated on: ${formatDateForDisplay(new Date())}`;
+  doc.text(dateText, margin, y);
+  
+  // Record count
+  const recordCountText = `Total Records: ${data.length}`;
+  doc.text(recordCountText, pageWidth - margin, y, { align: 'right' });
+  y += 15;
+  
+  // Table setup
+  const pageHeight = doc.internal.pageSize.height;
+  const availableWidth = pageWidth - 2 * margin;
+  const minColWidth = 25; // Minimum column width
+  const maxColWidth = availableWidth / 3; // Maximum column width
+  let colWidth = availableWidth / headers.length;
+  
+  // Adjust column width if too narrow
+  if (colWidth < minColWidth) {
+    colWidth = Math.min(minColWidth, maxColWidth);
+  }
+  
+  const rowHeight = 10; // Increased row height for better text wrapping
+  const headerHeight = 12;
+  
+  // Function to draw table headers
+  function drawHeaders(startY) {
+    doc.setFontSize(9);
+    doc.setFont(undefined, 'bold');
+    
+    headers.forEach((header, i) => {
+      const x = margin + i * colWidth;
+      
+      // Set fill color for each header cell individually
+      doc.setFillColor(240, 240, 240); // Light gray background
+      doc.setDrawColor(0, 0, 0); // Black borders
+      doc.setLineWidth(0.1); // Thin borders
+      
+      // Draw filled rectangle with border
+      doc.rect(x, startY, colWidth, headerHeight, 'FD'); // Fill and Draw
+      
+      // Set text color and draw header text
+      doc.setTextColor(0, 0, 0); // Black text
+      
+      // Split header text to fit column width
+      const headerLines = doc.splitTextToSize(header, colWidth - 4);
+      const lineHeight = 4;
+      const totalTextHeight = headerLines.length * lineHeight;
+      const textStartY = startY + (headerHeight - totalTextHeight) / 2 + lineHeight;
+      
+      headerLines.forEach((line, lineIndex) => {
+        doc.text(line, x + 2, textStartY + lineIndex * lineHeight);
+      });
+    });
+    
+    return startY + headerHeight;
+  }
+  
+  // Draw initial headers
+  y = drawHeaders(y);
+  
+  // Reset properties for data rows (no fill color)
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(0, 0, 0);
+  doc.setLineWidth(0.1); // Reset to thin borders for data rows
+  doc.setDrawColor(0, 0, 0); // Black borders
+  // Clear any fill color for data rows
+  doc.setFillColor(255, 255, 255); // White background for data rows
+  
+  // Data rows with improved text wrapping
+  data.forEach((row, rowIndex) => {
+    let maxRowHeight = rowHeight;
+    let cellContents = [];
+    
+    // First pass: calculate required height for each cell
+    headers.forEach((header, i) => {
+      const key = header.toLowerCase().replace(/\s+/g, '');
+      let value = '';
+      
+      // Map headers to data keys (same as Excel export)
+      switch (key) {
+        case 'date': value = row.date || ''; break;
+        case 'reference': value = row.reference || ''; break;
+        case 'buyer': value = row.buyer || ''; break;
+        case 'total': value = row.total || ''; break;
+        case 'status': value = row.status || ''; break;
+        case 'fbrinvoicenumber': value = row.fbrInvoiceNumber || ''; break;
+        case 'hscode': value = row.hsCode || ''; break;
+        case 'productname': value = row.productName || ''; break;
+        case 'type': value = row.type || ''; break;
+        case 'uom': value = row.uom || ''; break;
+        case 'purchaserate': value = row.purchaseRate || ''; break;
+        case 'salerate': value = row.saleRate || ''; break;
+        case 'taxrate': value = row.taxRate || ''; break;
+        case 'stock': value = row.stock || ''; break;
+        case 'ntn': value = row.ntn || ''; break;
+        case 'businessname': value = row.businessName || ''; break;
+        case 'province': value = row.province || ''; break;
+        case 'registrationtype': value = row.registrationType || ''; break;
+        default: value = row[key] || '';
+      }
+      
+      const cellText = doc.splitTextToSize(String(value), colWidth - 4);
+      cellContents[i] = cellText;
+      const cellHeight = Math.max(cellText.length * 4 + 2, rowHeight);
+      maxRowHeight = Math.max(maxRowHeight, cellHeight);
+    });
+    
+    // Check if we need a new page
+    if (y + maxRowHeight > pageHeight - margin) {
+      doc.addPage();
+      y = margin + 10;
+      
+      // Redraw headers on new page with proper styling
+      y = drawHeaders(y);
+      
+      // Reset properties for data rows after header redraw (no fill color)
+      doc.setFont(undefined, 'normal');
+      doc.setTextColor(0, 0, 0);
+      doc.setLineWidth(0.1);
+      doc.setDrawColor(0, 0, 0);
+      // Clear any fill color for data rows
+      doc.setFillColor(255, 255, 255); // White background for data rows
+    }
+    
+    // Draw row with proper text wrapping
+    headers.forEach((header, i) => {
+      const x = margin + i * colWidth;
+      
+      // Draw cell border with thin black lines (no fill)
+      doc.setLineWidth(0.1);
+      doc.setDrawColor(0, 0, 0);
+      doc.rect(x, y, colWidth, maxRowHeight); // Border only, no fill
+      
+      // Draw cell content with proper alignment
+      const cellText = cellContents[i];
+      if (cellText && cellText.length > 0) {
+        doc.setTextColor(0, 0, 0); // Ensure black text
+        const lineHeight = 4;
+        cellText.forEach((line, lineIndex) => {
+          const textY = y + 4 + lineIndex * lineHeight;
+          doc.text(line, x + 2, textY);
+        });
+      }
+    });
+    
+    y += maxRowHeight;
+  });
+  
+  // Footer on last page
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  const footerY = pageHeight - 15;
+  doc.text('Generated by FBR Digital Invoicing System', margin, footerY);
+  doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - margin, footerY, { align: 'right' });
+  
+  // Generate filename with date and time
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+  const filenameWithTimestamp = `${filename}_${timestamp}`;
+  
+  doc.save(`${filenameWithTimestamp}.pdf`);
+}
+
+// Export invoices to PDF with full invoice format (using the same layout as view invoice modal)
+async function exportInvoicesToPDF(invoices, filename) {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    showToast('error', 'PDF Error', 'PDF library not loaded');
+    return;
+  }
+  
+  try {
+    // For single invoice, use the exact same function as view invoice modal
+    if (invoices.length === 1) {
+      const invoice = await dbGet(STORE_NAMES.invoices, invoices[0].id);
+      if (invoice) {
+        const invoiceResponse = {
+          ...invoice,
+          seller: null, // Will be fetched in generateInvoicePDF
+          buyer: null,  // Will be fetched in generateInvoicePDF
+          invoiceNumber: invoice.invoiceNumber || 'N/A',
+          dated: invoice.dated || invoice.invoiceDate,
+          invoiceRefNo: invoice.invoiceRefNo || invoice.invoiceRef,
+          currency: invoice.currency || 'PKR',
+          // Ensure items are available - prefer invoicePayload.items
+          items: invoice.invoicePayload?.items || invoice.items || [],
+          invoicePayload: invoice.invoicePayload || {},
+          totalAmount: invoice.totalAmount || 0,
+          status: invoice.status || 'draft'
+        };
+        
+        // Use the EXACT same function as the "Download as PDF" button in view invoice modal
+        await generateInvoicePDF(invoiceResponse, invoice.status === 'draft', false);
+        return;
+      }
+    }
+    
+    // For multiple invoices, create combined PDF using the exact same layout as view invoice modal
+    await createCombinedPDFWithSameLayout(invoices, filename);
+    
+  } catch (error) {
+    console.error('Error exporting invoices to PDF:', error);
+    showToast('error', 'Export Failed', 'Failed to export invoices to PDF: ' + error.message);
+  }
+}
+
+// Create combined PDF using the exact same layout as view invoice modal
+async function createCombinedPDFWithSameLayout(invoices, filename) {
+  const { jsPDF } = window.jspdf;
+  const masterDoc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  
+  showToast('info', 'Processing', `Creating combined PDF with ${invoices.length} invoices...`);
+  
+  for (let i = 0; i < invoices.length; i++) {
+    if (i > 0) masterDoc.addPage();
+    
+    const invoice = await dbGet(STORE_NAMES.invoices, invoices[i].id);
+    if (!invoice) continue;
+    
+    // Create proper response object
+    const invoiceResponse = {
+      ...invoice,
+      seller: null, // Will be fetched in generateInvoicePDF
+      buyer: null,  // Will be fetched in generateInvoicePDF
+      invoiceNumber: invoice.invoiceNumber || 'N/A',
+      dated: invoice.dated || invoice.invoiceDate,
+      invoiceRefNo: invoice.invoiceRefNo || invoice.invoiceRef,
+      currency: invoice.currency || 'PKR',
+      // Ensure items are available - prefer invoicePayload.items
+      items: invoice.invoicePayload?.items || invoice.items || [],
+      invoicePayload: invoice.invoicePayload || {},
+      totalAmount: invoice.totalAmount || 0,
+      status: invoice.status || 'draft'
+    };
+    
+    // Use the EXACT same layout generation as the view invoice modal
+    await generateInvoicePDFForCombined(masterDoc, invoiceResponse, invoice.status === 'draft');
+  }
+  
+  // Generate filename with date and time
+  const now = new Date();
+  const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '').replace('T', '_');
+  const filenameWithTimestamp = `${filename}_${timestamp}`;
+  
+  masterDoc.save(`${filenameWithTimestamp}.pdf`);
+  
+  showToast('success', 'PDF Downloaded', `${invoices.length} invoices exported to combined PDF successfully`);
+}
+
+// Generate PDF content for combined PDF (modified version of generateInvoicePDF)
+async function generateInvoicePDFForCombined(doc, response, isDummy = false) {
+  await generateInvoicePDFContent(doc, response, isDummy);
+}
+
+// Core PDF generation content (extracted from generateInvoicePDF for reuse)
+async function generateInvoicePDFContent(doc, response, isDummy = false) {
+  // Use the exact same layout configuration as the original generateInvoicePDF
+  const layoutConfig = {
+    margin: { top: 5, left: 10, right: 10, bottom: 10 },
+    pageWidth: 210, // A4 width in mm
+    pageHeight: 297, // A4 height in mm
+    colWidths: [14, 22, 53, 13, 16, 20, 18, 18, 20], // Adjusted for description wrapping
+    rowHeight: 7,
+    headerBgColor: [230, 230, 230], // Grey background
+    borderWidths: { top: 2, bottom: 2, left: 4, right: 2 }
+  };
+  
+  // Get data (exactly as in original generateInvoicePDF)
+  const seller = response?.seller || await getSelectedSeller();
+  const buyer = response?.buyer || await getSelectedBuyer();
+  const invoiceDate = formatDateForDisplay(response?.dated || response?.invoicePayload?.invoiceDate || DOMElements.invoiceDate.value);
+  const invoiceRef = response?.invoiceRefNo || response?.invoicePayload?.invoiceRefNo || DOMElements.invoiceRef.value;
+  const currency = response?.currency || DOMElements.currency.value;
+  const invoiceNumber = response?.invoiceNumber || "N/A";
+  // Fix: Get items from invoicePayload.items first, then fallback to root items
+  const itemsList = response?.invoicePayload?.items || response?.items || [];
+
+  // Function to wrap text (exactly as in original)
+  const wrapText = (text, x, y, maxWidth, lineHeight = 5) => {
+    const lines = doc.splitTextToSize(text, maxWidth);
+    lines.forEach((line, i) => doc.text(line, x, y + i * lineHeight));
+    return lines.length * lineHeight;
+  };
+
+  // Generate content (exactly as in original generateInvoicePDF)
+  let y = layoutConfig.margin.top + 10;
+  const x = layoutConfig.margin.left;
+
+  // Header - Get sales type from invoice data
+  const invoiceType = response?.invoiceType || response?.invoicePayload?.invoiceType || DOMElements.invoiceType?.value || 'Sale Invoice';
+  const salesType = invoiceType.replace(' Invoice', '');
+  
+  doc.setFontSize(20);
+  doc.setFont(undefined, "bold");
+  const headerText = `${salesType} Invoice`;
+  const headerWidth = doc.getTextWidth(headerText);
+  const wrappedHeaderHeight = wrapText(headerText, layoutConfig.pageWidth / 2 - headerWidth / 2, y, layoutConfig.pageWidth - 20);
+  y += wrappedHeaderHeight + 5;
+
+  // Logo and QR Code (exactly as in original)
+  const logo = new Image();
+  logo.src = "FBRDigitalInvoiceLogo.png";
+  await new Promise(resolve => { logo.onload = resolve; });
+  doc.addImage(logo, "PNG", x, layoutConfig.margin.top, 35, 20);
+
+  // QR code at top right
+  const qrText = invoiceNumber;
+  try {
+    const qrUrl = await QRCode.toDataURL(qrText, { errorCorrectionLevel: 'H' });
+    const qrWidth = 35;
+    doc.addImage(
+      qrUrl,
+      "PNG",
+      layoutConfig.pageWidth - layoutConfig.margin.right - qrWidth,
+      layoutConfig.margin.top,
+      qrWidth,
+      qrWidth
+    );
+  } catch (err) {
+    console.error("QR Code Error:", err);
+  }
+
+  // Invoice Info Section (exactly as in original)
+  y += 20;
+  const leftX = x, rightX = 120;
+  let leftY = y, rightY = y;
+
+  doc.setFontSize(11);
+  doc.setFont(undefined, "bold");
+  doc.text("Invoice Date:", leftX, leftY);
+  doc.setFont(undefined, "normal");
+  leftY += wrapText(invoiceDate, leftX + 32, leftY, 80);
+
+  doc.setFont(undefined, "bold");
+  doc.text("Payment Mode:", leftX, leftY);
+  doc.setFont(undefined, "normal");
+  const paymentMode = response?.paymentMode || document.getElementById('paymentMode')?.value || 'Cash';
+  leftY += wrapText(paymentMode, leftX + 32, leftY, 80);
+
+  doc.setFont(undefined, "bold");
+  doc.text("Currency:", leftX, leftY);
+  doc.setFont(undefined, "normal");
+  leftY += wrapText(currency, leftX + 32, leftY, 80);
+
+  doc.setFont(undefined, "bold");
+  doc.text("Invoice Ref No.:", rightX, rightY);
+  doc.setFont(undefined, "normal");
+  rightY += wrapText(invoiceRef, rightX + 38, rightY, 60);
+
+  doc.setFont(undefined, "bold");
+  doc.text("FBR Invoice No.:", rightX, rightY);
+  doc.setFont(undefined, "normal");
+  rightY += wrapText(invoiceNumber, rightX + 38, rightY, 45);
+
+  // Seller/Buyer Info (exactly as in original)
+  y = Math.max(leftY, rightY) + 10;
+  doc.setFont(undefined, "bold");
+  doc.text("Seller Information", leftX, y);
+  doc.text("Buyer Information", rightX, y);
+  doc.setFont(undefined, "normal");
+
+  y += 5;
+  leftY = y;
+  rightY = y;
+  leftY += wrapText(`Name: ${seller?.businessName || ''}`, leftX, leftY, 90);
+  leftY += wrapText(`NTN: ${seller?.ntn || ''}`, leftX, leftY, 90);
+  leftY += wrapText(`Address: ${seller?.address || ''}, ${seller?.province || ''}`, leftX, leftY, 90);
+
+  rightY += wrapText(`Name: ${buyer?.businessName || ''}`, rightX, rightY, 80);
+  rightY += wrapText(`NTN: ${buyer?.ntn || ''}`, rightX, rightY, 80);
+  rightY += wrapText(`Address: ${buyer?.address || ''}, ${buyer?.province || ''}`, rightX, rightY, 80);
+
+  // Invoice Details Title (exactly as in original)
+  y = Math.max(leftY, rightY) + 10;
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(13);
+  doc.text("Invoice Details", layoutConfig.pageWidth / 2, y, { align: "center" });
+
+  // Items Table (exactly as in original generateInvoicePDF)
+  y += 6;
+  const headers = ["Sr. No.", "HS Code", "Description", "Qty", "Rate", "Amount", "Tax %", "Tax Amt", "Total"];
+  doc.setFontSize(9);
+  doc.setFont(undefined, "bold");
+  doc.setFillColor(...layoutConfig.headerBgColor);
+
+  // Calculate table width and left position for border
+  const tableX = x;
+  const tableWidth = layoutConfig.colWidths.reduce((a, b) => a + b, 0);
+
+  // Store row positions for border
+  let tableStartY = y;
+  let tableEndY = y;
+
+  // Draw header row (exactly as in original)
+  let headerX = tableX;
+  headers.forEach((header, i) => {
+    doc.setFillColor(...layoutConfig.headerBgColor);
+    doc.rect(headerX, y, layoutConfig.colWidths[i], layoutConfig.rowHeight, "F");
+    doc.setLineWidth(0.15); // thinner border
+    doc.rect(headerX, y, layoutConfig.colWidths[i], layoutConfig.rowHeight);
+    doc.setTextColor(0, 0, 0);
+    const headerLines = doc.splitTextToSize(header, layoutConfig.colWidths[i] - 2);
+    let headerY = y + 4;
+    headerLines.forEach((line, idx) => {
+      doc.text(line, headerX + 1, headerY + idx * 4, { maxWidth: layoutConfig.colWidths[i] - 2 });
+    });
+    headerX += layoutConfig.colWidths[i];
+  });
+  doc.setTextColor(0, 0, 0);
+
+  y += layoutConfig.rowHeight;
+  doc.setFont(undefined, "normal");
+
+  // Summary Section calculation (exactly as in original)
+  const summaryBoxWidth = 80;
+  const summaryBoxHeight = 22;
+  const summaryX = layoutConfig.pageWidth - layoutConfig.margin.right - summaryBoxWidth + 3;
+  y = y + 2;
+  const summaryYBox = layoutConfig.pageHeight - layoutConfig.margin.bottom - summaryBoxHeight;
+
+  // Calculate summary values (exactly as in original but with correct field mapping)
+  const gross = itemsList.reduce((sum, i) => {
+    const amount = Number(i.valueSalesExcludingST || (i.quantity * i.unitPrice) || 0);
+    return sum + amount;
+  }, 0);
+  
+  const tax = itemsList.reduce((sum, i) => {
+    const taxRateVal = i.taxRate || parseFloat(i.rate?.replace('%', '')) || 0;
+    const salesTax = Number(i.salesTaxApplicable || ((i.valueSalesExcludingST || (i.quantity * i.unitPrice)) * taxRateVal / 100) || 0);
+    const extraTax = Number(i.extraTax || 0);
+    const furtherTax = Number(i.furtherTax || 0);
+    return sum + salesTax + extraTax + furtherTax;
+  }, 0);
+  
+  const totalDiscount = itemsList.reduce((sum, i) => sum + Number(i.discount || 0), 0);
+  const total = gross + tax - totalDiscount;
+
+  // Draw item rows (exactly as in original)
+  let rowYs = [];
+  let lastRowIdx = itemsList.length - 1;
+  
+  itemsList.forEach((item, idx) => {
+    // Handle both invoicePayload.items structure and regular items structure
+    const quantity = item.quantity || 1;
+    const unitPrice = item.unitPrice || (item.valueSalesExcludingST / quantity) || 0;
+    const amount = Number(item.valueSalesExcludingST || (quantity * unitPrice) || 0);
+    const taxRateVal = item.taxRate || parseFloat(item.rate?.replace('%', '')) || 0;
+    const salesTaxAmt = Number(item.salesTaxApplicable || (amount * taxRateVal / 100) || 0);
+    const extraTax = Number(item.extraTax || 0);
+    const furtherTax = Number(item.furtherTax || 0);
+    const discount = Number(item.discount || 0);
+    const taxAmt = salesTaxAmt + extraTax + furtherTax;
+    const total = amount + taxAmt - discount;
+
+    const row = [
+      (idx + 1).toString(),
+      item.hsCode || '',
+      item.productDescription || item.description || '',
+      String(quantity),
+      `${unitPrice.toFixed(2)}`,
+      `${amount.toFixed(2)}`,
+      `${taxRateVal.toFixed(2)}%`,
+      `${taxAmt.toFixed(2)}`,
+      `${total.toFixed(2)}`
+    ];
+
+    let cellX = tableX;
+    let maxCellHeight = layoutConfig.rowHeight;
+
+    // Calculate max height for this row
+    const cellHeights = row.map((cell, i) => {
+      const lines = doc.splitTextToSize(cell, layoutConfig.colWidths[i] - 2);
+      return lines.length * 4 + 2;
+    });
+    maxCellHeight = Math.max(...cellHeights, layoutConfig.rowHeight);
+
+    // Page break if needed (exactly as in original)
+    if (y + maxCellHeight > layoutConfig.pageHeight - layoutConfig.margin.bottom - 30) {
+      doc.setLineWidth(0.2);
+      doc.rect(tableX, tableStartY, tableWidth, y - tableStartY);
+      doc.addPage();
+      y = layoutConfig.margin.top;
+      tableStartY = y;
+      // Redraw header on new page
+      let headerX2 = tableX;
+      headers.forEach((header, i) => {
+        doc.setFillColor(...layoutConfig.headerBgColor);
+        doc.rect(headerX2, y, layoutConfig.colWidths[i], layoutConfig.rowHeight, "F");
+        doc.setLineWidth(0.15);
+        doc.rect(headerX2, y, layoutConfig.colWidths[i], layoutConfig.rowHeight);
+        doc.setTextColor(0, 0, 0);
+        const headerLines = doc.splitTextToSize(header, layoutConfig.colWidths[i] - 2);
+        let headerY = y + 4;
+        headerLines.forEach((line) => {
+          doc.text(line, headerX2 + 1, headerY, { maxWidth: layoutConfig.colWidths[i] - 2 });
+          headerY += 4;
+        });
+        headerX2 += layoutConfig.colWidths[i];
+      });
+      doc.setTextColor(0, 0, 0);
+      y += layoutConfig.rowHeight;
+    }
+
+    // Draw cells with wrapped text and thin border (exactly as in original)
+    row.forEach((cell, i) => {
+      doc.setLineWidth(0.15);
+      doc.rect(cellX, y, layoutConfig.colWidths[i], maxCellHeight);
+      const lines = doc.splitTextToSize(cell, layoutConfig.colWidths[i] - 2);
+      let textY = y + 5;
+      lines.forEach((line) => {
+        if (textY + 2 <= y + maxCellHeight) {
+          doc.text(line, cellX + 1, textY, { maxWidth: layoutConfig.colWidths[i] - 2 });
+          textY += 4;
+        }
+      });
+      cellX += layoutConfig.colWidths[i];
+    });
+
+    rowYs.push({ y, height: maxCellHeight });
+    y += maxCellHeight;
+  });
+
+  // Add gap and draw borders (exactly as in original)
+  y += 6;
+  tableEndY = y - 5;
+
+  doc.setLineWidth(0.3);
+  doc.rect(tableX, tableStartY, tableWidth, summaryYBox - tableStartY);
+
+  // Draw summary box (exactly as in original)
+  doc.setLineWidth(0.3);
+  doc.rect(summaryX, summaryYBox, summaryBoxWidth, summaryBoxHeight);
+
+  const rowH = summaryBoxHeight / 3;
+  for (let i = 1; i < 3; i++) {
+    doc.line(summaryX, summaryYBox + i * rowH, summaryX + summaryBoxWidth, summaryYBox + i * rowH);
+  }
+  const labelWidth = 32;
+  doc.line(summaryX + labelWidth, summaryYBox, summaryX + labelWidth, summaryYBox + summaryBoxHeight);
+
+  // Place summary labels and values (exactly as in original)
+  doc.setFont(undefined, "bold");
+  doc.text("Gross Amount:", summaryX + 2, summaryYBox + rowH / 2 + 1.5);
+  doc.text("Sales Tax:", summaryX + 2, summaryYBox + rowH + rowH / 2 + 1.5);
+  doc.text("Total Amount:", summaryX + 2, summaryYBox + 2 * rowH + rowH / 2 + 1.5);
+
+  doc.setFont(undefined, "normal");
+  doc.text(`${gross.toFixed(2)}`, summaryX + labelWidth + 2, summaryYBox + rowH / 2 + 1.5);
+  doc.text(`${tax.toFixed(2)}`, summaryX + labelWidth + 2, summaryYBox + rowH + rowH / 2 + 1.5);
+  doc.text(`${total.toFixed(2)}`, summaryX + labelWidth + 2, summaryYBox + 2 * rowH + rowH / 2 + 1.5);
+
+  // Footer (exactly as in original)
+  doc.setFont(undefined, "italic");
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    "This is a system generated Invoice, signature not required.",
+    layoutConfig.pageWidth / 2,
+    layoutConfig.pageHeight - layoutConfig.margin.bottom + 5,
+    { align: "center" }
+  );
+  doc.setTextColor(0, 0, 0);
+}
+
+// Generate single invoice PDF (enhanced version with full invoice details)
+async function generateSingleInvoicePDF(doc, invoice, isNewDoc = true) {
+  const margin = 15;
+  const pageWidth = doc.internal.pageSize.width;
+  const pageHeight = doc.internal.pageSize.height;
+  let y = margin + 10;
+  
+  // Set default border properties - thin black borders
+  doc.setLineWidth(0.1);
+  doc.setDrawColor(0, 0, 0);
+  
+  // Get seller and buyer information
+  let sellerInfo = null;
+  let buyerInfo = null;
+  
+  try {
+    if (invoice.sellerNTNCNIC || invoice.seller?.ntn) {
+      sellerInfo = await dbGet(STORE_NAMES.sellers, invoice.sellerNTNCNIC || invoice.seller?.ntn);
+    }
+    if (invoice.buyerNTNCNIC || invoice.buyer?.ntn) {
+      buyerInfo = await dbGet(STORE_NAMES.buyers, invoice.buyerNTNCNIC || invoice.buyer?.ntn);
+    }
+  } catch (error) {
+    console.warn('Could not get seller/buyer information for PDF:', error);
+  }
+  
+  // Header with seller information
+  if (sellerInfo && sellerInfo.businessName) {
+    doc.setFontSize(18);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(0, 0, 0);
+    const businessNameLines = doc.splitTextToSize(sellerInfo.businessName, pageWidth - 2 * margin);
+    businessNameLines.forEach(line => {
+      doc.text(line, pageWidth / 2, y, { align: 'center' });
+      y += 8;
+    });
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.setTextColor(60, 60, 60);
+    
+    let sellerDetails = [];
+    if (sellerInfo.ntn) sellerDetails.push(`NTN: ${sellerInfo.ntn}`);
+    if (sellerInfo.address) sellerDetails.push(sellerInfo.address);
+    if (sellerInfo.province) sellerDetails.push(sellerInfo.province);
+    
+    if (sellerDetails.length > 0) {
+      const sellerDetailText = sellerDetails.join(' | ');
+      const sellerDetailLines = doc.splitTextToSize(sellerDetailText, pageWidth - 2 * margin);
+      sellerDetailLines.forEach(line => {
+        doc.text(line, pageWidth / 2, y, { align: 'center' });
+        y += 5;
+      });
+    }
+    
+    y += 8;
+    doc.setLineWidth(0.2);
+    doc.setDrawColor(0, 0, 0);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 15;
+  }
+  
+  // Invoice title
+  const invoiceType = invoice.invoiceType || 'Sale Invoice';
+  const salesType = invoiceType.replace(' Invoice', '');
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.setTextColor(0, 0, 0);
+  doc.text(`${salesType} Invoice`, pageWidth / 2, y, { align: 'center' });
+  y += 20;
+  
+  // QR Code section
+  if (window.QRCode) {
+    const qrCanvas = document.createElement('canvas');
+    const qrText = invoice.invoiceNumber || invoice.invoiceRefNo || 'N/A';
+    try {
+      await QRCode.toCanvas(qrCanvas, qrText, { width: 100, errorCorrectionLevel: 'H' });
+      const qrUrl = qrCanvas.toDataURL('image/png');
+      doc.addImage(qrUrl, 'PNG', pageWidth - margin - 25, y - 15, 20, 20);
+    } catch (error) {
+      console.warn('Could not generate QR code:', error);
+    }
+  }
+  
+  // Invoice information section
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(0, 0, 0);
+  
+  const leftColX = margin;
+  const rightColX = pageWidth / 2 + 10;
+  const lineHeight = 6;
+  
+  // Left column - Invoice details
+  let leftY = y;
+  doc.setFont(undefined, 'bold');
+  doc.text('Invoice Details:', leftColX, leftY);
+  leftY += 8;
+  doc.setFont(undefined, 'normal');
+  
+  doc.text(`Reference: ${invoice.invoiceRefNo || 'N/A'}`, leftColX, leftY); leftY += lineHeight;
+  doc.text(`Date: ${formatDateForDisplay(invoice.dated || invoice.invoiceDate)}`, leftColX, leftY); leftY += lineHeight;
+  doc.text(`Type: ${invoiceType}`, leftColX, leftY); leftY += lineHeight;
+  doc.text(`Currency: ${invoice.currency || 'PKR'}`, leftColX, leftY); leftY += lineHeight;
+  doc.text(`Status: ${invoice.status || 'draft'}`, leftColX, leftY); leftY += lineHeight;
+  if (invoice.invoiceNumber) {
+    doc.text(`FBR Invoice #: ${invoice.invoiceNumber}`, leftColX, leftY); leftY += lineHeight;
+  }
+  
+  // Right column - Seller & Buyer info
+  let rightY = y;
+  doc.setFont(undefined, 'bold');
+  doc.text('Seller Information:', rightColX, rightY);
+  rightY += 8;
+  doc.setFont(undefined, 'normal');
+  
+  if (sellerInfo) {
+    doc.text(`Name: ${sellerInfo.businessName}`, rightColX, rightY); rightY += lineHeight;
+    doc.text(`NTN: ${sellerInfo.ntn}`, rightColX, rightY); rightY += lineHeight;
+    if (sellerInfo.address) {
+      const addressLines = doc.splitTextToSize(`Address: ${sellerInfo.address}`, (pageWidth / 2) - 20);
+      addressLines.forEach(line => {
+        doc.text(line, rightColX, rightY);
+        rightY += lineHeight;
+      });
+    }
+  }
+  
+  rightY += 5;
+  doc.setFont(undefined, 'bold');
+  doc.text('Buyer Information:', rightColX, rightY);
+  rightY += 8;
+  doc.setFont(undefined, 'normal');
+  
+  const buyerName = invoice.buyerBusinessName || buyerInfo?.businessName || 'N/A';
+  const buyerNTN = invoice.buyerNTNCNIC || buyerInfo?.ntn || 'N/A';
+  doc.text(`Name: ${buyerName}`, rightColX, rightY); rightY += lineHeight;
+  doc.text(`NTN: ${buyerNTN}`, rightColX, rightY); rightY += lineHeight;
+  
+  y = Math.max(leftY, rightY) + 15;
+  
+  // Items table
+  if (invoice.items && invoice.items.length > 0) {
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('Invoice Items:', margin, y);
+    y += 10;
+    
+    // Table headers
+    const headers = ['Sr. No.', 'HS Code', 'Description', 'Qty', 'Rate', 'Amount', 'Tax %', 'Tax Amt', 'Total'];
+    const colWidths = [12, 18, 50, 12, 15, 18, 12, 15, 18];
+    const headerHeight = 8;
+    
+    doc.setFontSize(9);
+    doc.setFillColor(240, 240, 240);
+    doc.setLineWidth(0.1);
+    doc.setDrawColor(0, 0, 0);
+    
+    let x = margin;
+    headers.forEach((header, i) => {
+      doc.rect(x, y, colWidths[i], headerHeight, 'FD');
+      doc.setTextColor(0, 0, 0);
+      doc.text(header, x + 1, y + 5);
+      x += colWidths[i];
+    });
+    
+    y += headerHeight;
+    doc.setFont(undefined, 'normal');
+    
+    // Table rows
+    invoice.items.forEach((item, idx) => {
+      const rowHeight = 8;
+      
+      // Check if we need a new page
+      if (y + rowHeight > pageHeight - margin - 20) {
+        doc.addPage();
+        y = margin + 10;
+        
+        // Redraw headers
+        let headerX = margin;
+        headers.forEach((header, i) => {
+          doc.setFillColor(240, 240, 240);
+          doc.rect(headerX, y, colWidths[i], headerHeight, 'FD');
+          doc.setTextColor(0, 0, 0);
+          doc.setFont(undefined, 'bold');
+          doc.text(header, headerX + 1, y + 5);
+          headerX += colWidths[i];
+        });
+        y += headerHeight;
+        doc.setFont(undefined, 'normal');
+      }
+      
+      x = margin;
+      const quantity = item.quantity || 1;
+      const unitPrice = item.unitPrice || parseFloat(item.rate) || 0;
+      const amount = quantity * unitPrice;
+      const taxRate = item.taxRate || parseFloat(item.rate) || 0;
+      const taxAmount = amount * taxRate / 100;
+      const total = amount + taxAmount;
+      
+      const rowData = [
+        String(idx + 1),
+        item.hsCode || '',
+        item.productDescription || item.description || '',
+        String(quantity),
+        unitPrice.toFixed(2),
+        amount.toFixed(2),
+        `${taxRate.toFixed(2)}%`,
+        taxAmount.toFixed(2),
+        total.toFixed(2)
+      ];
+      
+      rowData.forEach((data, i) => {
+        doc.rect(x, y, colWidths[i], rowHeight);
+        if (i === 2) { // Description column - handle text wrapping
+          const lines = doc.splitTextToSize(data, colWidths[i] - 2);
+          doc.text(lines[0] || '', x + 1, y + 5);
+        } else {
+          doc.text(data, x + 1, y + 5);
+        }
+        x += colWidths[i];
+      });
+      
+      y += rowHeight;
+    });
+    
+    y += 10;
+  }
+  
+  // Summary section
+  const gross = invoice.items?.reduce((sum, item) => {
+    const amount = (item.quantity || 1) * (item.unitPrice || parseFloat(item.rate) || 0);
+    return sum + amount;
+  }, 0) || 0;
+  
+  const tax = invoice.items?.reduce((sum, item) => {
+    const amount = (item.quantity || 1) * (item.unitPrice || parseFloat(item.rate) || 0);
+    const taxRate = item.taxRate || parseFloat(item.rate) || 0;
+    return sum + (amount * taxRate / 100);
+  }, 0) || 0;
+  
+  const totalAmount = gross + tax;
+  
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  const summaryX = pageWidth - margin - 60;
+  
+  doc.text(`Gross Amount: ${gross.toFixed(2)} ${invoice.currency || 'PKR'}`, summaryX, y);
+  y += 8;
+  doc.text(`Sales Tax: ${tax.toFixed(2)} ${invoice.currency || 'PKR'}`, summaryX, y);
+  y += 8;
+  doc.setFillColor(240, 240, 240);
+  doc.rect(summaryX - 5, y - 6, 65, 10, 'FD');
+  doc.text(`Total Amount: ${totalAmount.toFixed(2)} ${invoice.currency || 'PKR'}`, summaryX, y);
+  
+  // Footer
+  const footerY = pageHeight - 15;
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.setFont(undefined, 'italic');
+  doc.text('This is a system generated Invoice, signature not required.', pageWidth / 2, footerY, { align: 'center' });
+}
+
+// === Global Exports for Components ===
+// Export essential functions and objects to window for use by components
+window.dbGetAll = dbGetAll;
+window.dbGet = dbGet;
+window.dbSet = dbSet;
+window.dbDelete = dbDelete;
+window.dbSetAll = dbSetAll;
+window.STORE_NAMES = STORE_NAMES;
+window.exportData = exportData;
+window.formatDateForDisplay = formatDateForDisplay;
+window.showToast = showToast;
+window.renderInvoicePreview = renderInvoicePreview;
+window.generateInvoicePDF = generateInvoicePDF;
+window.exportDatabase = exportDatabase;
+window.importDatabase = importDatabase;
+window.seedDatabaseFromBackup = seedDatabaseFromBackup;
+
+// Expose table population functions for component integration
+window.populateInvoicesTable = populateInvoicesTable;
+window.populateProductsTable = populateProductsTable;
+window.populateSellersTable = populateSellersTable;
+window.populateBuyersTable = populateBuyersTable;
+
+// Expose modal functions for component action buttons
+window.openAddProductModal = openAddProductModal;
+window.openAddSellerModal = () => {
+  const addSellerBtn = document.getElementById('addSellerBtn');
+  if (addSellerBtn) addSellerBtn.click();
+};
+window.openAddBuyerModal = () => {
+  const addBuyerBtn = document.getElementById('addBuyerBtn');
+  if (addBuyerBtn) addBuyerBtn.click();
+};
+
+// Expose navigation function
+window.switchToCreateInvoiceTab = switchToCreateInvoiceTab;
+
+// Make functions global for HTML onclick handlers
+window.removeScenarioChip = removeScenarioChip;
+window.populateTablesAndDashboard = populateTablesAndDashboard;
+window.initAppComponents = initAppComponents;
+
+// Global Invoice Action Handlers
+window.viewInvoice = async function(invoiceId) {
+  try {
+    let invoice = await dbGet(STORE_NAMES.invoices, invoiceId);
+    if (!invoice) {
+      const all = await dbGetAll(STORE_NAMES.invoices);
+      invoice = all.find(inv => String(inv.id) === String(invoiceId) || inv.invoiceRefNo === invoiceId || inv.invoicePayload?.invoiceRefNo === invoiceId || inv.invoiceNumber === invoiceId || inv.fbrResponse?.invoiceNumber === invoiceId);
+    }
+    if (!invoice) {
+      showToast("error", "Not Found", `Invoice #${invoiceId} not found in database.`);
+      return;
+    }
+    window.currentInvoiceData = invoice;
+    renderInvoicePreview(invoice);
+  } catch (err) {
+    console.error("Error viewing invoice:", err);
+    showToast("error", "View Error", err.message || "Failed to view invoice");
+  }
+};
+
+window.editInvoice = async function(invoiceId) {
+  try {
+    let invoice = await dbGet(STORE_NAMES.invoices, invoiceId);
+    if (!invoice) {
+      const all = await dbGetAll(STORE_NAMES.invoices);
+      invoice = all.find(inv => String(inv.id) === String(invoiceId));
+    }
+    if (!invoice) {
+      showToast("error", "Not Found", `Invoice #${invoiceId} not found.`);
+      return;
+    }
+    await loadInvoiceIntoForm(invoice);
+    switchToCreateInvoiceTab();
+    showToast("info", "Edit Mode", `Loaded invoice ${invoice.invoiceRefNo || invoice.invoicePayload?.invoiceRefNo || invoice.id} for editing.`);
+  } catch (err) {
+    console.error("Error editing invoice:", err);
+    showToast("error", "Edit Error", err.message);
+  }
+};
+
+window.duplicateInvoice = async function(invoiceId) {
+  try {
+    let invoice = await dbGet(STORE_NAMES.invoices, invoiceId);
+    if (!invoice) {
+      const all = await dbGetAll(STORE_NAMES.invoices);
+      invoice = all.find(inv => String(inv.id) === String(invoiceId));
+    }
+    if (!invoice) {
+      showToast("error", "Not Found", `Invoice #${invoiceId} not found.`);
+      return;
+    }
+    const cloned = JSON.parse(JSON.stringify(invoice));
+    delete cloned.id;
+    if (cloned.invoicePayload) {
+      delete cloned.invoicePayload.invoiceNumber;
+    }
+    delete cloned.invoiceNumber;
+    delete cloned.fbrResponse;
+    currentEditingInvoice = null;
+    await loadInvoiceIntoForm(cloned);
+    switchToCreateInvoiceTab();
+    await updateInvoiceReference();
+    showToast("success", "Duplicated", `Cloned invoice into form. New reference assigned.`);
+  } catch (err) {
+    console.error("Error duplicating invoice:", err);
+    showToast("error", "Duplicate Error", err.message);
+  }
+};
+
+window.confirmDeleteInvoice = async function(invoiceId) {
+  if (!confirm(`Are you sure you want to delete invoice #${invoiceId}?`)) return;
+  try {
+    await dbDelete(STORE_NAMES.invoices, invoiceId);
+    await dbDelete(STORE_NAMES.invoices, parseInt(invoiceId) || invoiceId);
+    globalInvoices = await dbGetAll(STORE_NAMES.invoices);
+    await populateInvoicesTable();
+    updateDashboard();
+    showToast("success", "Deleted", `Invoice #${invoiceId} was deleted.`);
+  } catch (err) {
+    console.error("Error deleting invoice:", err);
+    showToast("error", "Delete Failed", err.message);
+  }
+};
+
+// Global Product Action Handlers
+window.editProduct = async function(productId) {
+  try {
+    const product = (await dbGet(STORE_NAMES.products, productId)) || globalProducts.find(p => String(p.id) === String(productId));
+    if (!product) return showToast("error", "Not Found", "Product not found");
+    const modal = document.getElementById('productModal');
+    if (modal) {
+      if (document.getElementById('productId')) document.getElementById('productId').value = product.id || '';
+      if (document.getElementById('productHSCode')) document.getElementById('productHSCode').value = product.hsCode || '';
+      if (document.getElementById('productName')) document.getElementById('productName').value = product.productName || '';
+      if (document.getElementById('productType')) document.getElementById('productType').value = product.productType || 'Goods';
+      if (document.getElementById('productUom')) document.getElementById('productUom').value = product.uom || '';
+      if (document.getElementById('productPurchaseRate')) document.getElementById('productPurchaseRate').value = product.purchaseRate || 0;
+      if (document.getElementById('productSaleRate')) document.getElementById('productSaleRate').value = product.saleRate || 0;
+      if (document.getElementById('productTaxRate')) document.getElementById('productTaxRate').value = product.taxRate || 0;
+      if (document.getElementById('productOpeningStock')) document.getElementById('productOpeningStock').value = product.openingStock || 0;
+      if (document.getElementById('productLowStock')) document.getElementById('productLowStock').value = product.lowStock || 0;
+      if (document.getElementById('productStatus')) document.getElementById('productStatus').value = product.status || 'Active';
+      modal.classList.add('active');
+    }
+  } catch (err) {
+    console.error("Error editing product:", err);
+  }
+};
+
+window.confirmDeleteProduct = async function(productId) {
+  if (!confirm(`Are you sure you want to delete this product?`)) return;
+  try {
+    await dbDelete(STORE_NAMES.products, productId);
+    await dbDelete(STORE_NAMES.products, parseInt(productId) || productId);
+    globalProducts = await dbGetAll(STORE_NAMES.products);
+    await populateProductsTable();
+    showToast("success", "Deleted", "Product deleted successfully");
+  } catch (err) {
+    showToast("error", "Delete Failed", err.message);
+  }
+};
+
+window.addProductToInvoiceFromTable = async function(productId) {
+  const product = globalProducts.find(p => String(p.id) === String(productId)) || (await dbGet(STORE_NAMES.products, productId));
+  if (!product) return showToast("error", "Not Found", "Product not found");
+  switchToCreateInvoiceTab();
+  const newItem = {
+    id: `item-${itemCounter++}`,
+    hsCode: product.hsCode || '',
+    description: product.productName || '',
+    serviceTypeId: 18,
+    saleType: product.productType && product.productType.toLowerCase().includes('service') ? 'Services' : 'Goods',
+    uom: product.uom || '',
+    quantity: 1,
+    unitPrice: parseFloat(product.saleRate) || 0,
+    taxRate: parseFloat(product.taxRate) || 18,
+    extraTax: 0,
+    furtherTax: 0,
+    discount: 0,
+    fedPayable: 0,
+    salesTaxWithheldAtSource: 0,
+    rateId: null,
+    sroSchedule: '',
+    sroItem: '',
+    uomOptions: product.uom ? [product.uom] : [],
+    taxRateOptions: product.taxRate ? [{ ratE_VALUE: product.taxRate, ratE_DESC: `${product.taxRate}%` }] : [],
+    sroScheduleOptions: [],
+    sroItemOptions: [],
+    annexureId: 3
+  };
+  items.push(newItem);
+  renderItems();
+  updateInvoiceTotal();
+  showToast("success", "Item Added", `Added ${product.productName} to invoice.`);
+};
+
+console.log('✓ Database functions and actions exported globally');
+console.log('✓ FBR Digital Invoicing App initialized successfully');
+
+// Test functions for modal functionality - can be called from console for testing
+// window.testErrorModal = function() {
+//   const testError = new Error("This is a test validation error with detailed information");
+//   const testErrorDetails = {
+//     errorCode: "TEST001",
+//     timestamp: new Date().toISOString(),
+//     submissionPayload: {
+//       invoiceRefNo: "SI-TEST-001",
+//       invoiceDate: "2024-01-15",
+//       currency: "PKR",
+//       items: [
+//         {
+//           productDescription: "Test Product",
+//           quantity: 1,
+//           unitPrice: 1000,
+//           taxRate: 17
+//         }
+//       ]
+//     },
+//     validationErrors: [
+//       {
+//         field: "seller.ntn",
+//         message: "Invalid NTN format",
+//         code: "INVALID_NTN"
+//       },
+//       {
+//         field: "buyer.registrationStatus",
+//         message: "Buyer registration status is inactive",
+//         code: "INACTIVE_BUYER"
+//       },
+//       {
+//         field: "items[0].hsCode",
+//         message: "HS Code is required for all items",
+//         code: "MISSING_HS_CODE"
+//       }
+//     ],
+//     response: {
+//       status: "failed",
+//       statusCode: 400,
+//       message: "Test validation failed with multiple errors",
+//       details: "This is a comprehensive test error to verify the full-width modal functionality. The error details container should now take up the full width and height available in the modal, making it easier to read detailed error information, stack traces, and debugging data.",
+//       stackTrace: "Error: Test validation failed\n    at testErrorModal (app.js:7689)\n    at HTMLButtonElement.<anonymous> (app.js:7712)\n    at Object.handleSubmissionError (app.js:1746)\n    at Object.displayErrorModal (app.js:1752)"
+//     }
+//   };
+  
+//   console.log("Testing error modal with detailed sample data:", testErrorDetails);
+//   handleSubmissionError(testError, testErrorDetails);
+// };
+
+// // Test function for success modal
+// window.testSuccessModal = function() {
+//   const testResponse = {
+//     fbrInvoiceNumber: "TEST-12345",
+//     invoiceNumber: "SI-TEST-001", 
+//     dated: new Date().toISOString(),
+//     status: "submitted",
+//     validationResponse: {
+//       invoiceStatuses: [
+//         {
+//           itemSNo: "1",
+//           statusCode: "200",
+//           invoiceNo: "SI-TEST-001",
+//           status: "Success",
+//           errorCode: "",
+//           error: ""
+//         }
+//       ]
+//     }
+//   };
+  
+//   console.log("Testing success modal with sample data:", testResponse);
+//   displaySuccessModal(testResponse);
+// };
+
+// console.log('✓ Modal test functions available:');
+// console.log('  - testErrorModal(): Test error modal display');
+// console.log('  - testSuccessModal(): Test success modal display');
+// console.log('  - testPreviewModal(): Test preview modal initialization');
+// console.log('  - testTabSwitching(): Test tab switching functionality in success modal');
+// console.log('');
+// console.log('🔧 Quick test: Run testTabSwitching() to verify tab functionality');
+// console.log('📋 Quick test: Run testSuccessModal() to test success modal');
+
+// // Simple quick test function that can be called immediately
+// window.quickTabTest = function() {
+//   console.log('🚀 Running quick tab test...');
+//   testSuccessModal();
+//   setTimeout(() => {
+//     console.log('Testing tab clicks...');
+//     const jsonBtn = document.querySelector('.tab-nav button[data-tab="json-tab"]');
+//     const tableBtn = document.querySelector('.tab-nav button[data-tab="table-tab"]');
+    
+//     if (jsonBtn && tableBtn) {
+//       console.log('Clicking JSON tab...');
+//       jsonBtn.click();
+//       setTimeout(() => {
+//         console.log('Clicking Table tab...');
+//         tableBtn.click();
+//         console.log('✅ Quick test completed - check if tabs switched!');
+//       }, 1000);
+//     }
+//   }, 1000);
+// };
+
+// // Test function for tab switching
+// window.testTabSwitching = function() {
+//   console.log('=== Testing tab switching functionality ===');
+  
+//   // First open the success modal with test data
+//   const testResponse = {
+//     fbrInvoiceNumber: "TAB-TEST-12345",
+//     invoiceNumber: "SI-TAB-TEST-001", 
+//     dated: new Date().toISOString(),
+//     status: "submitted",
+//     validationResponse: {
+//       invoiceStatuses: [
+//         {
+//           itemSNo: "1",
+//           statusCode: "200",
+//           invoiceNo: "SI-TAB-TEST-001",
+//           status: "Success",
+//           errorCode: "",
+//           error: ""
+//         }
+//       ]
+//     }
+//   };
+  
+//   console.log('Opening success modal with test data...');
+//   displaySuccessModal(testResponse);
+  
+//   // Test tab switching after a short delay
+//   setTimeout(() => {
+//     console.log('=== Starting tab button tests ===');
+    
+//     // Test clicking JSON tab
+//     const jsonTabBtn = document.querySelector('.tab-nav button[data-tab="json-tab"]');
+//     const tableTabBtn = document.querySelector('.tab-nav button[data-tab="table-tab"]');
+//     const jsonTabContent = document.getElementById('json-tab');
+//     const tableTabContent = document.getElementById('table-tab');
+    
+//     console.log('Elements found:', {
+//       jsonTabBtn: !!jsonTabBtn,
+//       tableTabBtn: !!tableTabBtn,
+//       jsonTabContent: !!jsonTabContent,
+//       tableTabContent: !!tableTabContent
+//     });
+    
+//     if (jsonTabBtn && tableTabBtn && jsonTabContent && tableTabContent) {
+//       console.log('\n=== Testing JSON Tab Click ===');
+//       jsonTabBtn.click();
+      
+//       setTimeout(() => {
+//         const jsonActive = jsonTabBtn.classList.contains('tab-active');
+//         const jsonVisible = jsonTabContent.classList.contains('active');
+//         const tableInactive = !tableTabBtn.classList.contains('tab-active');
+//         const tableHidden = !tableTabContent.classList.contains('active');
+        
+//         console.log('JSON tab results:', {
+//           buttonActive: jsonActive,
+//           contentVisible: jsonVisible,
+//           jsonDisplay: getComputedStyle(jsonTabContent).display,
+//           tableDisplay: getComputedStyle(tableTabContent).display
+//         });
+        
+//         console.log('\n=== Testing Table Tab Click ===');
+//         tableTabBtn.click();
+        
+//         setTimeout(() => {
+//           const tableActive = tableTabBtn.classList.contains('tab-active');
+//           const tableVisible = tableTabContent.classList.contains('active');
+//           const jsonInactive = !jsonTabBtn.classList.contains('tab-active');
+//           const jsonHidden = !jsonTabContent.classList.contains('active');
+          
+//           console.log('Table tab results:', {
+//             buttonActive: tableActive,
+//             contentVisible: tableVisible,
+//             tableDisplay: getComputedStyle(tableTabContent).display,
+//             jsonDisplay: getComputedStyle(jsonTabContent).display
+//           });
+          
+//           const allTestsPassed = jsonActive && jsonVisible && tableInactive && tableHidden && 
+//                                  tableActive && tableVisible && jsonInactive && jsonHidden;
+          
+//           if (allTestsPassed) {
+//             console.log('\n✅ ALL TAB SWITCHING TESTS PASSED!');
+//             showToast('success', 'Tab Test Complete', 'All tab switching functionality working correctly!');
+//           } else {
+//             console.log('\n❌ Some tab switching tests failed. Check logs above.');
+//             showToast('error', 'Tab Test Failed', 'Some tab functionality issues detected. Check console.');
+//           }
+//         }, 200);
+//       }, 200);
+//     } else {
+//       console.error('❌ Required tab elements not found!');
+//       showToast('error', 'Tab Test Failed', 'Required elements not found');
+//     }
+//   }, 1000);
+// };
+
+// // Test function for preview modal initialization
+// window.testPreviewModal = function() {
+//   try {
+//     initPreviewModal();
+//     console.log('Preview modal initialization test passed');
+//     showToast('success', 'Test Passed', 'Preview modal initialized successfully');
+//   } catch (error) {
+//     console.error('Preview modal initialization test failed:', error);
+//     showToast('error', 'Test Failed', 'Preview modal initialization failed: ' + error.message);
+//   }
+// };

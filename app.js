@@ -6874,33 +6874,56 @@ function createDashboardStructure() {
 // Create time analytics HTML structure
 function createTimeAnalyticsHTML() {
   const periods = [
-    { key: 'today', label: 'Today', icon: 'fas fa-calendar-day' },
-    { key: 'yesterday', label: 'Yesterday', icon: 'fas fa-calendar-minus' },
-    { key: 'thisWeek', label: 'This Week', icon: 'fas fa-calendar-week' },
-    { key: 'lastWeek', label: 'Last Week', icon: 'fas fa-calendar-alt' },
-    { key: 'thisMonth', label: 'This Month', icon: 'fas fa-calendar' },
-    { key: 'lastMonth', label: 'Last Month', icon: 'fas fa-calendar-times' },
-    { key: 'thisYear', label: 'This Year', icon: 'fas fa-calendar-check' },
-    { key: 'lastYear', label: 'Last Year', icon: 'fas fa-history' }
+    { key: 'today', label: 'Today', subLabel: 'Current Day', icon: 'fas fa-calendar-day', theme: 'theme-emerald' },
+    { key: 'yesterday', label: 'Yesterday', subLabel: 'Previous Day', icon: 'fas fa-history', theme: 'theme-amber' },
+    { key: 'thisWeek', label: 'This Week', subLabel: 'Current Week', icon: 'fas fa-calendar-week', theme: 'theme-blue' },
+    { key: 'lastWeek', label: 'Last Week', subLabel: 'Previous Week', icon: 'fas fa-calendar-minus', theme: 'theme-purple' },
+    { key: 'thisMonth', label: 'This Month', subLabel: 'Current Month', icon: 'fas fa-calendar-alt', theme: 'theme-cyan' },
+    { key: 'lastMonth', label: 'Last Month', subLabel: 'Previous Month', icon: 'fas fa-calendar-times', theme: 'theme-rose' },
+    { key: 'thisYear', label: 'This Year', subLabel: 'Current Year', icon: 'fas fa-calendar-check', theme: 'theme-teal' },
+    { key: 'lastYear', label: 'Last Year', subLabel: 'Previous Year', icon: 'fas fa-archive', theme: 'theme-slate' }
   ];
   
   return periods.map(period => `
-    <div class="analytics-card smart-card">
-      <div class="card-header">
-        <h4>${period.label}</h4>
-      </div>
-      <div class="card-metrics">
-        <span id="${period.key}Count" class="count-value">0</span>
-        <span class="count-label">Invoices</span>
-      </div>
-      <div class="totals-section">
-        <div class="total-item">
-          <span class="total-label">Total Amount:</span>
-          <span id="${period.key}Amount" class="total-value amount">PKR 0</span>
+    <div class="analytics-card modern-stat-card ${period.theme}">
+      <div class="stat-card-glow"></div>
+      <div class="stat-card-top">
+        <div class="stat-card-title-wrap">
+          <div class="stat-icon-pill">
+            <i class="${period.icon}"></i>
+          </div>
+          <div class="stat-meta">
+            <h4 class="stat-period-name">${period.label}</h4>
+            <span class="stat-period-sub">${period.subLabel}</span>
+          </div>
         </div>
-        <div class="total-item">
-          <span class="total-label">Sales Tax:</span>
-          <span id="${period.key}Tax" class="total-value tax">PKR 0</span>
+        <div class="stat-live-chip" title="Live sync active">
+          <span class="live-dot"></span>
+        </div>
+      </div>
+
+      <div class="stat-hero-metric">
+        <div class="stat-count-box">
+          <span id="${period.key}Count" class="count-value no-invoices">0</span>
+          <span class="count-unit">Invoices</span>
+        </div>
+      </div>
+
+      <div class="stat-financials-grid">
+        <div class="fin-metric-chip fin-sales">
+          <div class="fin-header">
+            <i class="fas fa-coins"></i>
+            <span>Total Sales</span>
+          </div>
+          <div id="${period.key}Amount" class="fin-value total-value amount">PKR 0</div>
+        </div>
+
+        <div class="fin-metric-chip fin-tax">
+          <div class="fin-header">
+            <i class="fas fa-receipt"></i>
+            <span>Sales Tax</span>
+          </div>
+          <div id="${period.key}Tax" class="fin-value total-value tax">PKR 0</div>
         </div>
       </div>
     </div>
@@ -7005,11 +7028,21 @@ function updateTimeBasedAnalytics() {
     const taxElement = document.getElementById(`${period.key}Tax`);
     
     if (countElement) {
-      countElement.textContent = analytics.count;
-      countElement.className = analytics.count > 0 ? 'count-value has-invoices' : 'count-value no-invoices';
+      countElement.textContent = analytics.count.toLocaleString();
+      if (analytics.count > 0) {
+        countElement.classList.remove('no-invoices');
+        countElement.classList.add('has-invoices');
+      } else {
+        countElement.classList.remove('has-invoices');
+        countElement.classList.add('no-invoices');
+      }
     }
-    if (amountElement) amountElement.textContent = `PKR ${analytics.amount.toLocaleString()}`;
-    if (taxElement) taxElement.textContent = `PKR ${analytics.taxes.toLocaleString()}`;
+    if (amountElement) {
+      amountElement.textContent = `PKR ${analytics.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    }
+    if (taxElement) {
+      taxElement.textContent = `PKR ${analytics.taxes.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    }
   });
 }
 
