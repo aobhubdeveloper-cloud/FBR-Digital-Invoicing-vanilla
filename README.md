@@ -1,298 +1,137 @@
-# FBR Digital Invoices - Professional
+# 🇵🇰 FBR PRAL Digital Invoicing System (Vanilla JS Edition)
 
-A comprehensive, feature-rich web application for creating and managing FBR (Federal Board of Revenue) digital invoices in Pakistan. This professional-grade vanilla JavaScript application provides a complete enterprise solution for businesses to generate, validate, and submit invoices to the FBR system with advanced analytics, data management, and automation capabilities.
+[![PRAL DI API v1.12](https://img.shields.io/badge/PRAL%20DI%20API-v1.12%20%7C%20v1.6-007acc.svg)](https://gw.fbr.gov.pk)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Vanilla JS](https://img.shields.io/badge/Stack-Vanilla%20JS%20%7C%20IndexedDB-yellow.svg)](app.js)
+[![Dual Environment](https://img.shields.io/badge/Mode-Sandbox%20%26%20Production-blue.svg)](index.html)
 
-## 🚀 Core Features
+A high-performance, modular enterprise web application for generating, validating, submitting, and tracking **Federal Board of Revenue (FBR) Pakistan** Digital Invoices in real-time. Built entirely in pure Vanilla JavaScript (ES6+), CSS3 custom design tokens, and browser-native IndexedDB for complete data sovereignty, speed, and offline resilience.
 
-### 📊 Advanced Dashboard Analytics
-- **Real-time Business Intelligence**: Comprehensive statistics with time-based analytics (Today, Yesterday, This Week/Month/Year)
-- **Invoice Metrics**: Track invoice counts, revenue trends, and submission success rates
-- **Interactive Widgets**: Latest invoices, top products, top buyers, and invoice status charts
-- **Smart Analytics Cards**: Compact metric displays with invoice counts, amounts, and tax totals
-- **Performance Monitoring**: API response times, success rates, and system health indicators
-- **Quick Actions**: Direct navigation to frequently used features from dashboard
-- **Visual Data Representation**: Charts and graphs for sales trends and tax analysis
-
-### 📋 Professional Invoice Management
-- **Complete Invoice Lifecycle**: Create, edit, preview, submit, and track invoices
-- **Draft System**: Advanced draft management with auto-save and version control
-- **Invoice Templates**: Reusable templates with predefined configurations
-- **Duplicate & Clone**: Create copies of existing invoices for rapid processing
-- **Invoice History**: Comprehensive tracking with status monitoring and search
-- **Multi-format Export**: PDF generation, JSON export, and print functionality
-- **QR Code Integration**: Automatic QR code generation for invoice verification
-- **Invoice Preview**: Real-time preview with professional PDF layout
-- **Batch Operations**: Bulk invoice processing capabilities
-
-### 👥 Advanced Entity Management
-- **Seller Management**: Complete business profile management with NTN validation
-  - API token management (Sandbox/Production)
-  - Scenario configuration and business activity mapping
-  - Registration status verification with FBR integration
-- **Buyer Management**: Comprehensive customer database
-  - Real-time registration validation
-  - Province-based filtering and management
-  - Customer relationship tracking
-- **Product Catalog**: Professional inventory management
-  - HS code integration and validation
-  - Tax rate calculation and SRO schedule mapping
-  - Stock management with low-stock alerts
-  - Product categories and advanced search
-
-### 🔧 Enterprise-Grade Advanced Features
-- **Dual Environment Support**: Seamless switching between Sandbox and Production modes
-- **Real-time Validation**: Pre-submission validation with FBR API integration
-- **Advanced QR Codes**: Dynamic QR code generation with error correction
-- **Professional PDF Generation**: High-quality invoice PDFs with custom layouts
-- **JSON Viewer & Editor**: Advanced JSON payload inspection and copying
-- **Comprehensive API Testing**: Built-in testing interface for all FBR endpoints
-- **Invoice Scenarios**: 28+ predefined business scenarios with automatic assignment
-- **Tax Engine**: Dynamic tax calculation based on service types and provinces
-- **SRO Integration**: Automatic SRO schedule and item mapping
-
-### 📊 Advanced Data Management
-- **IndexedDB Storage**: Professional client-side database with migration support
-- **Advanced Search & Filtering**: Multi-criteria filtering across all entities
-- **Smart Pagination**: Configurable pagination with performance optimization
-- **Multi-column Sorting**: Click-to-sort functionality with direction indicators
-- **Data Export/Import**: Complete database backup and restore functionality
-  - JSON export for full database backup
-  - CSV/Excel export for individual data sets
-  - PDF export for reports and documentation
-- **Data Validation**: Comprehensive input validation and sanitization
-- **Database Management**: Settings for data clearing and maintenance
-
-### 🎨 Professional User Interface
-- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
-- **Advanced Theming**: Light/Dark mode with smooth transitions and custom CSS variables
-- **Toast Notification System**: Real-time feedback with multiple notification types
-- **Modal Dialog System**: Clean, organized forms with advanced validation
-- **Tab-based Navigation**: Intuitive interface with multiple organized sections
-- **Interactive Elements**: Hover effects, animations, and smooth transitions
-- **Accessibility Features**: Screen reader support and keyboard navigation
-- **Professional Typography**: Modern font system with proper hierarchy
-
-## 🛠️ Technology Stack
-
-### Frontend Technologies
-- **HTML5**: Semantic markup with modern web standards and accessibility features
-- **CSS3**: Advanced styling with Flexbox, Grid layouts, and CSS custom properties
-- **Vanilla JavaScript (ES6+)**: Modern JavaScript with async/await, modules, and advanced features
-- **Font Awesome 6.4.0**: Comprehensive icon library for enhanced UI
-- **IndexedDB**: Professional client-side database with versioning and migration support
-
-### External Libraries & Dependencies
-- **jsPDF 2.5.1**: Advanced PDF generation with custom layouts and fonts
-- **QRCode.js 1.5.3**: High-quality QR code generation with error correction
-- **DOMPurify**: Enterprise-grade XSS protection and HTML sanitization
-- **CDN Integration**: Optimized loading of external dependencies
-
-### API Integration & Services
-- **FBR Digital Invoice APIs**: Complete integration with Pakistan's FBR system
-  - Invoice validation and submission endpoints
-  - Master data APIs (HS codes, provinces, transaction types)
-  - Registration verification services
-- **Real-time Validation**: Pre-submission invoice validation
-- **Registration Verification**: NTN/CNIC validation with FBR integration
-- **Tax Rate APIs**: Dynamic tax calculation based on service types
-- **SRO Schedule APIs**: Automatic schedule and item mapping
-
-## 📁 Project Structure
-
-```
-working/
-├── app.js                              # Main application logic (260KB+)
-├── index.html                          # Main HTML file with responsive layout
-├── index.css                          # Advanced stylesheet with theming (62KB+)
-├── FBRDigitalInvoiceLogo.png          # Application logo (732KB)
-├── App Logic.md                       # Detailed application logic documentation
-├── README.md                          # Comprehensive project documentation
-├── .gitignore                         # Git ignore configuration
-├── fbr-invoice-backup-*.json          # Database backup files
-├── invoices_*.json                    # Invoice data exports
-├── invoices_*.csv                     # Invoice CSV exports
-├── products_*.json                    # Product data exports
-├── working.zip                        # Compressed project archive
-└── app/                               # Development build directory
-    ├── app.js                         # Application logic
-    ├── index.html                     # HTML structure
-    ├── index.css                      # Styling
-    ├── App Logic.md                   # Logic documentation
-    └── README.md                      # Documentation
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Internet connection for FBR API access
-- Valid FBR API tokens (Sandbox/Production)
-
-### Installation
-1. Clone or download the repository
-2. Open `index.html` in a web browser
-3. Configure seller information with valid API tokens
-4. Start creating invoices!
-
-### Configuration
-1. **Add Sellers**: Navigate to "Manage Sellers" and add your business information
-2. **API Tokens**: Enter your FBR Sandbox and Production tokens
-3. **Add Buyers**: Set up your customer database
-4. **Products**: Create a product catalog for quick invoice creation
-
-## 📖 Usage Guide
-
-### Creating Professional Invoices
-1. **Seller Selection**: Choose from configured sellers with API tokens
-2. **Buyer Management**: Select existing buyers or add new ones with validation
-3. **Invoice Configuration**: Set type, date, currency, payment mode, and scenario
-4. **Line Items Management**: Add products with HS codes, quantities, and pricing
-5. **Automatic Calculations**: Review totals, tax calculations, and SRO schedules
-6. **Validation & Preview**: Validate data and preview PDF before submission
-7. **Submission Options**: Submit to FBR or save as draft for later processing
-
-### Advanced Data Management
-- **Seller Management**: 
-  - Complete business profiles with NTN validation
-  - API token configuration for Sandbox/Production environments
-  - Business activity and sector configuration
-  - Scenario assignment and management
-- **Buyer Management**: 
-  - Customer database with search and filtering
-  - Real-time registration status verification
-  - Province-based organization
-  - Bulk import/export capabilities
-- **Product Catalog**: 
-  - Comprehensive inventory with HS codes
-  - Tax rate configuration and SRO mapping
-  - Stock management with alerts
-  - Category-based organization
-- **Invoice Management**: 
-  - Advanced search and filtering
-  - Status tracking and monitoring
-  - Bulk operations and reporting
-  - Export capabilities (PDF, CSV, JSON)
-
-### Professional API Testing Suite
-- **Endpoint Testing**: Direct testing of all FBR API endpoints
-- **Response Analysis**: Detailed response inspection and validation
-- **Parameter Management**: Dynamic parameter configuration
-- **Error Troubleshooting**: Comprehensive error analysis and debugging
-- **Authentication Testing**: Token validation and environment switching
-- **Data Validation**: Real-time data format and structure validation
-
-## 🔐 Security Features
-
-- **XSS Protection**: DOMPurify integration for safe HTML rendering
-- **Input Validation**: Comprehensive client-side validation
-- **Token Security**: Secure handling of API authentication tokens
-- **Data Sanitization**: All user inputs are properly sanitized
-
-## 🌐 FBR Integration
-
-### Comprehensive API Support
-- **Invoice Processing APIs**:
-  - `/validateinvoicedata` - Pre-submission invoice validation
-  - `/postinvoicedata` - Official invoice submission to FBR
-- **Master Data APIs**:
-  - `/itemdesccode` - HS codes and item descriptions
-  - `/provinces` - Pakistan provinces and territories
-  - `/transtypecode` - Transaction type codes
-  - `/uom` - Unit of Measure standards
-  - `/doctypecode` - Document type classifications
-- **Tax & SRO APIs**:
-  - `/SaleTypeToRate` - Dynamic tax rate calculation
-  - `/SroSchedule` - SRO schedule management
-  - `/SROItem` - SRO item mapping
-  - `/sroitemcode` - SRO item codes
-- **Validation & Registration APIs**:
-  - `/statl` - NTN/CNIC registration validation
-  - `/Get_Reg_Type` - Registration type verification
-  - `/HS_UOM` - HS code to UOM mapping
-
-### Advanced Scenario Management
-- **28+ Predefined Scenarios**: Complete business scenario coverage
-- **Intelligent Filtering**: Business activity and sector-based scenario assignment
-- **Automatic Configuration**: Dynamic scenario assignment based on seller profiles
-- **Custom Scenarios**: Support for custom business scenarios
-- **Scenario Validation**: Real-time scenario compatibility checking
-
-## 📱 Browser Compatibility
-
-- **Chrome**: 80+
-- **Firefox**: 75+
-- **Safari**: 13+
-- **Edge**: 80+
-- **Mobile Browsers**: iOS Safari 13+, Chrome Mobile 80+
-
-## 🔧 Development
-
-### Local Development
-1. Serve files through a local web server (required for API calls)
-2. Use browser developer tools for debugging
-3. Test with FBR Sandbox environment first
-
-### Customization
-- Modify CSS variables for theme customization
-- Extend JavaScript modules for additional functionality
-- Add new API endpoints in the configuration section
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📞 Support
-
-For support and questions:
-- Check the FBR Digital Invoice documentation
-- Review API endpoint responses in the testing section
-- Ensure valid API tokens are configured
-
-## 🔄 Version History
-
-- **v1.0.0**: Initial release with core invoice functionality
-- **v1.1.0**: Added product management and advanced filtering
-- **v1.2.0**: Enhanced UI/UX with dark theme support
-- **v1.3.0**: Improved PDF generation and QR code integration
-- **v1.4.0**: Added Dashboard analytics with visual charts and KPIs
-- **v1.5.0**: Advanced data management with IndexedDB migration
-- **v1.6.0**: Professional API testing suite and comprehensive export features
-- **v1.7.0**: Enhanced search, filtering, and pagination across all modules
-- **v1.8.0**: Advanced modal system and toast notification improvements
-- **v1.9.0**: Complete theme system with smooth transitions and accessibility
-- **v2.0.0**: Professional-grade features with enterprise-level data management
-
-## 🎯 Enhanced Roadmap
-
-### Near-term Enhancements
-- [ ] Advanced bulk invoice processing with batch validation
-- [ ] Email integration for automated invoice delivery
-- [ ] Multi-language support (English, Urdu)
-- [ ] Advanced reporting with custom date ranges
-- [ ] Invoice templates with customizable layouts
-
-### Medium-term Features
-- [ ] Integration with popular accounting software (QuickBooks, SAP)
-- [ ] Mobile application (PWA) for on-the-go access
-- [ ] Advanced analytics with machine learning insights
-- [ ] Multi-currency support with real-time exchange rates
-- [ ] Automated backup and sync capabilities
-
-### Long-term Vision
-- [ ] Multi-tenant architecture for accounting firms
-- [ ] API for third-party integrations
-- [ ] Advanced compliance monitoring and alerts
-- [ ] Blockchain integration for invoice verification
-- [ ] AI-powered tax optimization recommendations
+Fully compliant with the latest **PRAL Technical Specifications (v1.12 & v1.6)** and Pakistan Sales Tax Rules (SRO 709(I)/2025).
 
 ---
 
-**Note**: This application requires valid FBR API credentials to function properly. Ensure you have the necessary permissions and tokens from the Federal Board of Revenue of Pakistan before using in production.
+## 🌟 Key Highlights
+
+- **⚡ Zero Framework Overhead**: Pure Vanilla JS with no heavy bundler requirements. Run instantly via any HTTP server or statically.
+- **🛡️ 100% PRAL API v1.12 / v1.6 Compliant**: Supports all 15 official endpoints for real-time validation, posting, status checks, ATL lookups, HS codes, and SRO schedules.
+- **🔄 Dual Environment Architecture**: 1-click toggle between **Sandbox** (`https://gw.fbr.gov.pk/..._sb`) and **Production** (`https://gw.fbr.gov.pk/...`).
+- **📊 Real-Time Analytics Dashboard**: Automatic calculations for gross sales, sales tax applicable, tax withheld, and volume breakdowns across Today, Yesterday, This Week, This Month, and This Year.
+- **💾 Automatic & 1-Click Database Seeding**: Instant initialization with verified sample business records (sellers, buyers, products, and submitted invoices).
+- **👁️ Dynamic Invoice Preview & PDF Generation**: View and print official invoices with high-density QR codes (Version 2.0 25×25), line items, statutory tax summaries, and buyer/seller details.
+- **🧪 Interactive "Test APIs" Suite**: Built-in visual API workbench to test all 15 FBR endpoints with customizable parameters and JSON payloads.
+
+---
+
+## 🌐 Master Catalog of PRAL Digital Invoicing API Endpoints
+
+The application integrates with the complete set of PRAL Digital Invoicing Web Services:
+
+| # | Endpoint Name | HTTP Method | Sandbox URL | Production URL | Description & Parameters |
+|---|---|---|---|---|---|
+| 1 | **Validate Invoice** | `POST` | `https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb` | `https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata` | Validates complete invoice JSON payload against business rules without filing |
+| 2 | **Post / Submit Invoice** | `POST` | `https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata_sb` | `https://gw.fbr.gov.pk/di_data/v1/di/postinvoicedata` | Posts and officially registers the invoice on FBR portal, returning official FBR Invoice Number |
+| 3 | **Get Invoice Data** | `GET` | `https://gw.fbr.gov.pk/di_data/v1/di/getinvoicedata_sb` | `https://gw.fbr.gov.pk/di_data/v1/di/getinvoicedata` | Queries submitted invoice record by `invoiceNumber` or reference |
+| 4 | **Active Taxpayer List (ATL)** | `POST` | `https://gw.fbr.gov.pk/dist/v1/statl` | `https://gw.fbr.gov.pk/dist/v1/statl` | Verifies Active / Inactive taxpayer status for given NTN/CNIC and date |
+| 5 | **Get Registration Type** | `POST` | `https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type` | `https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type` | Determines whether buyer is Registered / Unregistered / Corporate |
+| 6 | **Provinces** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/provinces` | `https://gw.fbr.gov.pk/pdi/v1/provinces` | Retrieves list of Pakistani provincial and territorial codes |
+| 7 | **Document Types** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/doctypecode` | `https://gw.fbr.gov.pk/pdi/v1/doctypecode` | Retrieves document type definitions (`Sale Invoice`, `Debit Note`, `Credit Note`) |
+| 8 | **HS Codes / Item Desc** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/itemdesccode` | `https://gw.fbr.gov.pk/pdi/v1/itemdesccode` | Returns official Harmonized System (HS) product and service classifications |
+| 9 | **Units of Measurement** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/uom` | `https://gw.fbr.gov.pk/pdi/v1/uom` | Standard Unit of Measurement codes (`KG`, `Numbers`, `Meter`, `MT`, etc.) |
+| 10 | **Transaction Types** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/transtypecode` | `https://gw.fbr.gov.pk/pdi/v1/transtypecode` | Standard and special tax transaction types |
+| 11 | **Sales Type to Rate** | `GET` | `https://gw.fbr.gov.pk/pdi/v2/SaleTypeToRate` | `https://gw.fbr.gov.pk/pdi/v2/SaleTypeToRate` | Maps transaction types and originating provinces to applicable tax rates |
+| 12 | **HS Code to UoM (v2)** | `GET` | `https://gw.fbr.gov.pk/pdi/v2/HS_UOM` | `https://gw.fbr.gov.pk/pdi/v2/HS_UOM` | Returns allowed UoM mapping for given HS code and sales annexure |
+| 13 | **SRO Schedule (v1)** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/SroSchedule` | `https://gw.fbr.gov.pk/pdi/v1/SroSchedule` | Statutory exemption and concessionary schedules |
+| 14 | **SRO Item Code (v1)** | `GET` | `https://gw.fbr.gov.pk/pdi/v1/sroitemcode` | `https://gw.fbr.gov.pk/pdi/v1/sroitemcode` | Serial items under active SROs |
+| 15 | **SRO Item (v2)** | `GET` | `https://gw.fbr.gov.pk/pdi/v2/SROItem` | `https://gw.fbr.gov.pk/pdi/v2/SROItem` | Version 2 SRO item details and dates |
+
+---
+
+## 💻 Tech Stack & Architecture
+
+- **Frontend Core**: Semantic HTML5, Vanilla JavaScript (ES6+ Modules, async/await), Vanilla CSS3 (Custom design tokens, Dark/Light mode theme engine).
+- **Local Storage / Persistence**: HTML5 IndexedDB (`FBRInvoiceDB`) with zero reliance on external backends for offline storage.
+- **PDF Generation**: `jsPDF` for client-side pixel-perfect vector invoices.
+- **Security & Sanitization**: `DOMPurify` to eliminate XSS risks during payload rendering and table updates.
+- **QR Code Encoding**: `QRCode.js` with ECC Level M for official 1.0" × 1.0" receipt compliance.
+- **Icons & Visuals**: FontAwesome 6.4.0 SVG icon set.
+
+---
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+- Any modern web browser (Google Chrome, Microsoft Edge, Mozilla Firefox, Safari).
+- Any local static HTTP server (e.g. Node `http-server`, Python `http.server`, or VS Code Live Server).
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/aobhubdeveloper-cloud/FBR-Digital-Invoicing-vanilla.git
+cd FBR-Digital-Invoicing-vanilla
+```
+
+### 2. Start Local Server
+Run with Python:
+```bash
+python -m http.server 8080
+```
+Or run with Node / npm:
+```bash
+npx serve .
+# or
+npm start
+```
+
+### 3. Open in Browser
+Visit `http://localhost:8080` in your web browser.
+
+---
+
+## 📖 Application Modules
+
+### 1. 📊 Dashboard Analytics
+- Overview cards: **Gross Sales**, **Sales Tax Applicable**, **Tax Withheld**, **Total Invoices Issued**.
+- Time-slice filters: Real-time filtering across Today, Yesterday, This Week, This Month, This Year, or Lifetime.
+- Interactive charts: Sales tax trends, top products by volume, top buyers, and scenario breakdown.
+
+### 2. 📝 Create & Submit Invoices
+- Multi-tier seller selection with automatic token binding.
+- Real-time NTN / CNIC verification via ATL and Registration Type APIs.
+- Dynamic line items editor with automatic tax calculation, extra tax, further tax, discount, and SRO schedule mapping.
+- Pre-submission validation against PRAL business rules with instant error modal breakdown.
+
+### 3. 📋 Manage Invoices
+- Comprehensive list of stored drafts, validated invoices, and submitted PRAL invoices.
+- Status badges: `Submitted`, `Validated`, `Draft`, `Cancelled`, `Partially Cancelled`.
+- Actions: **View Preview**, **Download PDF**, **Edit**, **Duplicate / Clone**, and **Delete**.
+
+### 4. 👥 Entity Management (Sellers, Buyers, Products)
+- **Sellers**: Manage business NTN/CNIC, STRN, addresses, business sectors, and Sandbox/Production API Bearer tokens.
+- **Buyers**: Customer database with real-time ATL status indicators and province assignment.
+- **Products**: Catalog of HS codes, standard UoMs, rates, and default SRO schedules.
+
+### 5. 🧪 Interactive Test APIs Suite
+- Built-in visual testing workbench for all 15 FBR API endpoints.
+- Auto-populates sample JSON payloads for invoice validation and submission.
+- Real-time response inspection with 1-click clipboard copy.
+
+### 6. ⚙️ Settings & Data Seeding
+- **1-Click Seed Sample Data**: Populate complete database with verified sellers, buyers, products, and past invoices.
+- **Backup & Restore**: Export complete IndexedDB database to JSON, or import previous backups.
+- **Theme Settings**: Seamless toggle between Dark Mode and Light Mode.
+
+---
+
+## 🔒 Security Best Practices
+
+1. **Token Protection**: Bearer tokens are stored exclusively in the user's local browser IndexedDB and are never transmitted to any third-party server other than official FBR gateway endpoints (`gw.fbr.gov.pk`).
+2. **Payload Sanitization**: All user-entered text is sanitized through `DOMPurify` before DOM insertion.
+3. **Environment Segregation**: Clear visual indicators prevent accidental submissions to Production while in Sandbox mode.
+
+---
+
+## 📄 License & Compliance
+
+Distributed under the **MIT License**. See [LICENSE](LICENSE) for more information.
+
+*Note: This application is an independent client-side integration tool designed to interface with the Federal Board of Revenue (FBR) Pakistan Digital Invoicing System. Users must obtain authorized credentials and IP whitelisting from PRAL / FBR for production compliance.*
