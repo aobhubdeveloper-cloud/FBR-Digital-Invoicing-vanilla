@@ -189,20 +189,25 @@
 }
 
 .table-component .items-table th {
-  background-color: #f8f9fa;
-  border-bottom: 2px solid #dee2e6;
-  font-weight: 600;
-  color: #495057;
+  background: linear-gradient(180deg, #e8edf4 0%, #dce4ee 100%);
+  border-bottom: 2px solid #94a3b8;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  color: #1e293b;
   white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-transform: uppercase;
 }
 
 .table-component .items-table th[style*="cursor: pointer"] {
   user-select: none;
-  transition: background-color 0.15s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .table-component .items-table th[style*="cursor: pointer"]:hover {
-  background-color: #e9ecef;
+  background: linear-gradient(180deg, #dbe4ef 0%, #cbd8e8 100%);
+  color: #0052a5;
 }
 
 .table-component .items-table tbody tr {
@@ -704,9 +709,16 @@
 }
 
 .dark-theme .table-component .items-table th {
-  background: #1e3c72;
-  color: #fff;
-  border-color: var(--border-color, #334155);
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #475569 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.dark-theme .table-component .items-table th[style*="cursor: pointer"]:hover {
+  background: linear-gradient(180deg, #283548 0%, #172033 100%) !important;
+  color: #38bdf8 !important;
 }
 
 .dark-theme .table-component .items-table td {

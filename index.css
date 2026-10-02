@@ -1259,14 +1259,20 @@
   }
 
   /* Dark theme for active table tabs */
-  [data-theme="dark"] .tab-content.table-tab.active .items-table thead {
-    background: #2d2d2d;
+  [data-theme="dark"] .tab-content.table-tab.active .items-table thead,
+  [data-theme="dark"] .items-table thead,
+  [data-theme="dark"] .sticky-header thead {
+    background: #0f172a;
   }
 
-  [data-theme="dark"] .tab-content.table-tab.active .items-table th {
-    background: #2d2d2d;
-    color: #e0e0e0;
-    border-bottom-color: #444;
+  [data-theme="dark"] .tab-content.table-tab.active .items-table th,
+  [data-theme="dark"] .items-table th,
+  [data-theme="dark"] .response-table th {
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+    color: #f8fafc !important;
+    font-weight: 700 !important;
+    border-bottom: 2px solid #475569 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   }
 
   [data-theme="dark"] .tab-content.table-tab.active .items-table td {
@@ -2559,16 +2565,21 @@
 
  
   
-  /* Items Table Header CSS - Sticky */
+  /* Items Table Header CSS - Sticky with bold font and shaded background */
   .items-table th {
-    background-color: var(--fbr-gray);
-    font-weight: 600;
-    color: #495057;
+    background: linear-gradient(180deg, #e8edf4 0%, #dce4ee 100%);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+    color: #1e293b;
     position: sticky;
     top: 0;
     z-index: 25; /* Below filters (z-index: 30) but above content */
-    padding: 12px 8px; /* Increased padding for better spacing */
-    border-bottom: 2px solid #dee2e6; /* Added border for separation */
+    padding: 12px 10px;
+    border-bottom: 2px solid #94a3b8;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    text-transform: uppercase;
+    white-space: nowrap;
   }
   
    .items-table tbody tr {
@@ -2968,8 +2979,10 @@
   
   /* Response Table Header CSS */
   .response-table th {
-    background-color: var(--fbr-gray);
-    font-weight: 600;
+    background: linear-gradient(180deg, #e8edf4 0%, #dce4ee 100%);
+    font-weight: 700;
+    color: #1e293b;
+    border-bottom: 2px solid #94a3b8;
   }
   
   /* Sticky Header CSS */
@@ -5326,17 +5339,18 @@ input[type="text"], input[type="number"], input[type="email"], select, textarea 
 }
 
 .tab-content.table-tab.active .items-table th {
-  background: #f8f9fa;
-  color: #495057;
-  font-weight: 600;
-  padding: 15px 10px;
+  background: linear-gradient(180deg, #e8edf4 0%, #dce4ee 100%);
+  color: #1e293b;
+  font-weight: 700;
+  padding: 14px 10px;
   text-align: left;
-  border-bottom: 2px solid #dee2e6;
+  border-bottom: 2px solid #94a3b8;
   white-space: nowrap;
-  font-size: 0.8rem;
-  letter-spacing: 0.3px;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
   line-height: 1.2;
-  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  text-transform: uppercase;
 }
 
 .tab-content.table-tab.active .items-table td {
