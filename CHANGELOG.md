@@ -4,6 +4,19 @@ All notable changes and updates to the **FBR Digital Invoicing System** applicat
 
 ---
 
+## [v2.1.0] - Modular Components Suite Integration
+
+### 🧩 Overview
+Integrated the modular, reusable component architecture (`components/` directory) into the root application without breaking changes:
+- **`TableComponent`**: Generic, data-driven table renderer supporting sorting, search filtering, dynamic pagination, and status-conditional row actions.
+- **`FilterComponent`**: Reusable filter control bar generating dropdowns, search input with debounce, and date ranges.
+- **`ExportComponent`**: Universal data exporter with built-in JSON, CSV/Excel, and vector PDF summary table generation.
+- **`tableConfigs`**: Declarative column schemas for Invoices, Products, Sellers, and Buyers.
+- **`components.css`**: Compact icon-only action buttons with animated tooltips, dropdown menus, and complete Dark/Light mode theming.
+- **`componentTests`**: On-demand in-browser unit/integration test suite (`window.runComponentTests()`).
+
+---
+
 ## [v2.0.0] - Standalone PRAL DI API v1.12 & v1.6 Integration & Upgrade
 
 ### 🚀 Overview

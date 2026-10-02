@@ -24,6 +24,14 @@ Welcome to the **FBR PRAL Digital Invoicing System** codebase. This document out
 ├── index.html          # Main application UI, modal templates, tab structures, and SVG icons
 ├── index.css           # Design tokens, theme variables (Dark/Light mode), and layout styling
 ├── app.js              # Core application logic, IndexedDB controller, PRAL API client, and event handlers
+├── components/         # Modular reusable components suite
+│   ├── TableComponent.js   # Generic table renderer with sorting, pagination, and actions
+│   ├── FilterComponent.js  # Dynamic search and filter dropdown bar
+│   ├── ExportComponent.js  # CSV, Excel, JSON, and PDF universal exporter
+│   ├── tableConfigs.js     # Declarative column and action schemas for all entities
+│   ├── componentInit.js    # Component mounting and lifecycle controller
+│   ├── componentTests.js   # In-browser test runner (window.runComponentTests())
+│   └── components.css      # Component styles, tooltips, and dark theme support
 ├── package.json        # Standalone project metadata and launch scripts
 ├── CHANGELOG.md        # Comprehensive version changelog & PRAL DI API endpoint catalog
 ├── README.md           # User-facing overview, features, and setup instructions
