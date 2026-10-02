@@ -1,0 +1,20 @@
+{
+  "name": "fbr-digital-invoicing-system",
+  "version": "1.0.0",
+  "description": "Pakistan FBR Digital Invoicing System - Enterprise Single Page Application",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx -y serve . -l 8080",
+    "dev": "python -m http.server 8080",
+    "serve": "npx -y http-server . -p 8080 -c-1"
+  },
+  "keywords": [
+    "fbr",
+    "digital-invoicing",
+    "sales-tax",
+    "pakistan-fbr",
+    "invoicing-system"
+  ],
+  "author": "Ashfaq Ahmed",
+  "license": "MIT"
+}

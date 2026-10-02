@@ -1241,7 +1241,7 @@ const defaultProvinces = [
   { stateProvinceCode: 9, stateProvinceDesc: "GILGIT BALTISTAN" },
 ]
 
-// API URLs with environment distinction
+// API URLs with environment distinction (PRAL Digital Invoicing API v1.12 & v1.6)
 const API_URLS = {
   validate: {
     sandbox: "https://gw.fbr.gov.pk/di_data/v1/di/validateinvoicedata_sb",
@@ -1263,6 +1263,10 @@ const API_URLS = {
   SROItem: "https://gw.fbr.gov.pk/pdi/v2/SROItem",
   statl: "https://gw.fbr.gov.pk/dist/v1/statl",
   getRegType: "https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type",
+  invoiceStatus: {
+    sandbox: "https://gw.fbr.gov.pk/di_data/v1/di/getinvoicedata_sb",
+    production: "https://gw.fbr.gov.pk/di_data/v1/di/getinvoicedata",
+  }
 };
 
 
@@ -2034,15 +2038,18 @@ async function fetchWithAuth(endpoint, options = {}) {
 try {
 const sellers = await dbGetAll(STORE_NAMES.sellers)
 const selectedSellerNTN = DOMElements.sellerSelect?.value || ""
-const seller = sellers.find((s) => s.ntn === selectedSellerNTN)
+let seller = sellers.find((s) => s.ntn === selectedSellerNTN)
+if (!seller && sellers.length > 0) {
+  seller = sellers[0];
+}
 if (!seller) {
-  showToast("error", "Seller Error", "❌ No seller selected or seller not found");
-  throw new Error("No seller selected");
+  showToast("error", "Seller Error", "❌ No seller available in database. Please load sample data or add a seller.");
+  throw new Error("No seller available");
 }
 
-const isProduction = DOMElements.modeToggle.checked;
+const isProduction = DOMElements.modeToggle ? DOMElements.modeToggle.checked : false;
 const environment = isProduction ? "production" : "sandbox";
-const token = isProduction ? seller.productionToken : seller.sandboxToken;
+const token = (isProduction ? seller.productionToken : seller.sandboxToken) || seller.sandboxToken || seller.productionToken || "";
 
 const url = typeof endpoint === "string" ? endpoint : endpoint[environment];
 
@@ -4336,61 +4343,75 @@ function updateInvoiceTotal() {
 function renderInvoicePreview(invoice) {
   if (!invoice) return;
   
-  // Store the current invoice data for JSON view
+  // Store the current invoice data for JSON view and PDF download
   window.currentInvoiceData = invoice;
   
   // Show the preview modal
-  const previewModal = document.getElementById('previewModal');
+  const previewModal = document.getElementById('previewModal') || DOMElements.previewModal;
   if (previewModal) {
     previewModal.classList.add('active');
   }
   
   // Generate the preview using the same function as the PDF generation
-  generateInvoicePDF(invoice, true, true);
+  generateInvoicePDF(invoice, false, true);
 }
 
 // Helper: Load invoice data into the Create Invoice form
 async function loadInvoiceIntoForm(invoice) {
+  if (!invoice) return;
+  const payload = invoice.invoicePayload || invoice;
+  
   // Set seller and buyer selects
-  DOMElements.sellerSelect.value = invoice.sellerNTNCNIC || invoice.seller?.ntn || '';
-  DOMElements.buyerSelect.value = invoice.buyerNTNCNIC || invoice.buyer?.ntn || '';
-  DOMElements.invoiceDate.value = invoice.invoiceDate || invoice.dated || '';
-  DOMElements.invoiceType.value = invoice.invoiceType || '';
-  DOMElements.scenarioId.value = invoice.scenarioId || '';
-  DOMElements.currency.value = invoice.currency || '';
+  const sellerNTN = payload.sellerNTNCNIC || invoice.sellerNTNCNIC || invoice.seller?.ntn || '';
+  const buyerNTN = payload.buyerNTNCNIC || invoice.buyerNTNCNIC || invoice.buyer?.ntn || '';
+  
+  if (DOMElements.sellerSelect) DOMElements.sellerSelect.value = sellerNTN;
+  if (DOMElements.buyerSelect) DOMElements.buyerSelect.value = buyerNTN;
+  if (DOMElements.invoiceDate) DOMElements.invoiceDate.value = payload.invoiceDate || invoice.invoiceDate || invoice.dated || '';
+  if (DOMElements.invoiceType) DOMElements.invoiceType.value = payload.invoiceType || invoice.invoiceType || 'Sale Invoice';
+  if (DOMElements.scenarioId) DOMElements.scenarioId.value = payload.scenarioId || invoice.scenarioId || '';
+  if (DOMElements.currency) DOMElements.currency.value = payload.currency || invoice.currency || 'PKR';
   
   // Ensure invoice ID is properly handled as string
   if (invoice.id) {
     currentEditingInvoice = { ...invoice, id: invoice.id.toString() };
   }
-  DOMElements.invoiceRef.value = invoice.invoiceRefNo || invoice.invoiceRef || '';
+  if (DOMElements.invoiceRef) {
+    DOMElements.invoiceRef.value = payload.invoiceRefNo || invoice.invoiceRefNo || invoice.invoiceRef || '';
+  }
   
   // Clear existing items and load invoice items
   items = [];
   itemCounter = 0;
   
-  if (invoice.items && invoice.items.length > 0) {
-    for (const item of invoice.items) {
+  const rawItems = payload.items || invoice.items || [];
+  if (rawItems && rawItems.length > 0) {
+    for (const item of rawItems) {
+      const qty = parseFloat(item.quantity) || 1;
+      const valExcl = parseFloat(item.valueSalesExcludingST) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || (qty > 0 && valExcl > 0 ? valExcl / qty : 0);
+      const taxRate = parseFloat(item.taxRate) || parseFloat(item.rate) || 0;
+      
       const newItem = {
         id: `item-${itemCounter++}`,
         hsCode: item.hsCode || '',
         description: item.productDescription || item.description || '',
         serviceTypeId: parseInt(item.serviceTypeId) || 18,
-        saleType: item.saleType || 'Services',
+        saleType: (item.saleType || 'Services').trim(),
         uom: item.uoM || item.uom || '',
-        quantity: parseFloat(item.quantity) || 1,
-        unitPrice: parseFloat(item.unitPrice) || 0,
-        taxRate: parseFloat(item.taxRate) || parseFloat(item.rate) || 0,
+        quantity: qty,
+        unitPrice: unitPrice,
+        taxRate: taxRate,
         extraTax: parseFloat(item.extraTax) || 0,
         furtherTax: parseFloat(item.furtherTax) || 0,
         discount: parseFloat(item.discount) || 0,
         fedPayable: parseFloat(item.fedPayable) || 0,
         salesTaxWithheldAtSource: parseFloat(item.salesTaxWithheldAtSource) || 0,
         rateId: item.rateId || null,
-        sroSchedule: item.sroSchedule || '',
-        sroItem: item.sroItem || '',
-        uomOptions: item.uom ? [item.uom] : [],
-        taxRateOptions: item.taxRate ? [{ ratE_VALUE: item.taxRate, ratE_DESC: `${item.taxRate}%`, ratE_ID: item.rateId }] : [],
+        sroSchedule: item.sroScheduleNo || item.sroSchedule || '',
+        sroItem: item.sroItemSerialNo || item.sroItem || '',
+        uomOptions: (item.uoM || item.uom) ? [item.uoM || item.uom] : [],
+        taxRateOptions: taxRate ? [{ ratE_VALUE: taxRate, ratE_DESC: `${taxRate}%`, ratE_ID: item.rateId }] : [],
         sroScheduleOptions: [],
         sroItemOptions: [],
         annexureId: 3
@@ -4408,10 +4429,10 @@ async function loadInvoiceIntoForm(invoice) {
   
   // Trigger form updates
   setTimeout(async () => {
-    if (DOMElements.sellerSelect.value) {
-      await populateInvoiceScenarios(DOMElements.sellerSelect.value, invoice.scenarioId);
+    if (DOMElements.sellerSelect && DOMElements.sellerSelect.value) {
+      await populateInvoiceScenarios(DOMElements.sellerSelect.value, payload.scenarioId || invoice.scenarioId);
     }
-    if (DOMElements.buyerSelect.value) {
+    if (DOMElements.buyerSelect && DOMElements.buyerSelect.value) {
       DOMElements.buyerSelect.dispatchEvent(new Event('change'));
     }
     await updateInvoiceReference();
@@ -4782,9 +4803,13 @@ function initModals() {
   
   
 async function generateInvoicePDF(response, isDummy = false, isPreview = false) {
-  // If no response is provided, use the lastSubmissionResponse
+  // If no response is provided, use window.currentInvoiceData or lastSubmissionResponse
   if (!response) {
-    response = lastSubmissionResponse;
+    response = window.currentInvoiceData || lastSubmissionResponse;
+  }
+  if (!response && !isDummy) {
+    showToast("warning", "No Invoice Data", "No invoice data available to generate invoice view/PDF.");
+    return;
   }
   if (!window.jspdf || !window.jspdf.jsPDF || !window.QRCode) {
     showToast("error", "PDF Error", "Required libraries (jsPDF or QRCode) not loaded");
@@ -4794,13 +4819,60 @@ async function generateInvoicePDF(response, isDummy = false, isPreview = false) 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
-  // Get data
-  const seller = response?.seller || await getSelectedSeller();
-  const buyer = response?.buyer || await getSelectedBuyer();
-  const invoiceDate = formatDateForDisplay(response?.dated || response?.invoicePayload?.invoiceDate || DOMElements.invoiceDate.value);
-  const invoiceRef = response?.invoiceRefNo || response?.invoicePayload?.invoiceRefNo || DOMElements.invoiceRef.value;
-  const currency = response?.currency || DOMElements.currency.value;
-  const invoiceNumber = response?.invoiceNumber ||  "N/A";
+  // Resolve Seller robustly
+  let seller = response?.seller;
+  const sNTN = response?.sellerNTNCNIC || response?.invoicePayload?.sellerNTNCNIC;
+  if (!seller && sNTN) {
+    if (typeof globalSellers !== 'undefined' && globalSellers.length > 0) {
+      seller = globalSellers.find(s => s.ntn === sNTN || s.id === sNTN);
+    }
+    if (!seller && typeof dbGet === 'function') {
+      try {
+        seller = await dbGet(STORE_NAMES.sellers, sNTN);
+      } catch (e) {}
+    }
+  }
+  if (!seller && (response?.sellerBusinessName || response?.invoicePayload?.sellerBusinessName)) {
+    seller = {
+      businessName: response.sellerBusinessName || response.invoicePayload?.sellerBusinessName || '',
+      ntn: sNTN || '',
+      address: response.sellerAddress || response.invoicePayload?.sellerAddress || '',
+      province: response.sellerProvince || response.invoicePayload?.sellerProvince || ''
+    };
+  }
+  if (!seller && typeof getSelectedSeller === 'function') {
+    seller = await getSelectedSeller();
+  }
+
+  // Resolve Buyer robustly
+  let buyer = response?.buyer;
+  const bNTN = response?.buyerNTNCNIC || response?.invoicePayload?.buyerNTNCNIC;
+  if (!buyer && bNTN) {
+    if (typeof globalBuyers !== 'undefined' && globalBuyers.length > 0) {
+      buyer = globalBuyers.find(b => b.ntn === bNTN || b.id === bNTN);
+    }
+    if (!buyer && typeof dbGet === 'function') {
+      try {
+        buyer = await dbGet(STORE_NAMES.buyers, bNTN);
+      } catch (e) {}
+    }
+  }
+  if (!buyer && (response?.buyerBusinessName || response?.invoicePayload?.buyerBusinessName)) {
+    buyer = {
+      businessName: response.buyerBusinessName || response.invoicePayload?.buyerBusinessName || '',
+      ntn: bNTN || '',
+      address: response.buyerAddress || response.invoicePayload?.buyerAddress || '',
+      province: response.buyerProvince || response.invoicePayload?.buyerProvince || ''
+    };
+  }
+  if (!buyer && typeof getSelectedBuyer === 'function') {
+    buyer = await getSelectedBuyer();
+  }
+
+  const invoiceDate = formatDateForDisplay(response?.invoiceDate || response?.dated || response?.invoicePayload?.invoiceDate || response?.createdAt || DOMElements.invoiceDate?.value);
+  const invoiceRef = response?.invoiceRefNo || response?.invoicePayload?.invoiceRefNo || DOMElements.invoiceRef?.value || "N/A";
+  const currency = response?.currency || response?.invoicePayload?.currency || DOMElements.currency?.value || "PKR";
+  const invoiceNumber = response?.invoiceNumber || response?.fbrResponse?.invoiceNumber || response?.invoicePayload?.invoiceNumber || "N/A";
   const itemsList = response?.items || response?.invoicePayload?.items || items;
 
 
@@ -5196,21 +5268,23 @@ async function generateInvoicePDF(response, isDummy = false, isPreview = false) 
         </thead>
         <tbody>
           ${itemsList.map((item, idx) => {
-            const amount = Number(item.valueSalesExcludingST || (item.quantity * (item.unitPrice || 0)) || 0);
+            const qty = Number(item.quantity) || 1;
+            const amount = Number(item.valueSalesExcludingST ?? (qty * (Number(item.unitPrice) || 0)) ?? 0);
+            const unitPriceVal = Number(item.unitPrice) || (qty > 0 && amount > 0 ? (amount / qty) : (parseFloat(item.rate) || 0));
             const taxRateVal = Number(item.taxRate || parseFloat(item.rate) || 0);
-            const salesTaxAmt = Number(item.salesTaxApplicable || (amount * taxRateVal / 100) || 0);
+            const salesTaxAmt = Number(item.salesTaxApplicable ?? (amount * taxRateVal / 100) ?? 0);
             const extraTax = Number(item.extraTax || 0);
             const furtherTax = Number(item.furtherTax || 0);
             const discount = Number(item.discount || 0);
             const taxAmt = salesTaxAmt + extraTax + furtherTax;
-            const total = amount + taxAmt - discount;
+            const total = Number(item.totalValues) || (amount + taxAmt - discount);
             return `
               <tr>
                 <td>${idx + 1}</td>
                 <td>${item.hsCode || ''}</td>
                 <td class="description">${item.productDescription || item.description || ''}</td>
-                <td>${item.quantity}</td>
-                <td>${(item.unitPrice || parseFloat(item.rate) || 0).toFixed(2)}</td>
+                <td>${qty}</td>
+                <td>${unitPriceVal.toFixed(2)}</td>
                 <td>${amount.toFixed(2)}</td>
                 <td>${taxRateVal.toFixed(2)}%</td>
                 <td>${taxAmt.toFixed(2)}</td>
@@ -6058,6 +6132,9 @@ function initAPITesting() {
     SROItem: "https://gw.fbr.gov.pk/pdi/v2/SROItem",
     statl: "https://gw.fbr.gov.pk/dist/v1/statl",
     Get_Reg_Type: "https://gw.fbr.gov.pk/dist/v1/Get_Reg_Type",
+    validateinvoicedata: API_URLS.validate,
+    postinvoicedata: API_URLS.submit,
+    getinvoicedata: API_URLS.invoiceStatus,
   }
 
   const endpointParams = {
@@ -6067,6 +6144,9 @@ function initAPITesting() {
     SROItem: ["date_iso", "sro_id"],
     statl: ["regno", "post_date"],
     Get_Reg_Type: ["Registration_No"],
+    validateinvoicedata: ["invoice_payload_json"],
+    postinvoicedata: ["invoice_payload_json"],
+    getinvoicedata: ["invoice_no"],
   }
 
   function setActiveEndpoint(endpoint) {
@@ -6079,6 +6159,50 @@ function initAPITesting() {
         paramElement.classList.add("visible")
       }
     })
+
+    // Pre-populate sample invoice payload if empty
+    if ((endpoint === "validateinvoicedata" || endpoint === "postinvoicedata") && document.getElementById("test_invoice_payload")) {
+      const payloadBox = document.getElementById("test_invoice_payload");
+      if (!payloadBox.value.trim()) {
+        try {
+          const sample = {
+            invoiceType: "Sale Invoice",
+            invoiceDate: getCurrentDate("YYYY-MM-DD"),
+            sellerNTNCNIC: "7908224",
+            sellerBusinessName: "HUSSAINI LOGISTICS ENTERPRISES (PRIVATE) LIMITED",
+            sellerProvince: "SINDH",
+            sellerAddress: "Rawalpindi",
+            buyerNTNCNIC: "0711554",
+            buyerBusinessName: "PAKISTAN STATE OIL COMPANY LIMITED",
+            buyerProvince: "SINDH",
+            buyerAddress: "Karachi",
+            buyerRegistrationType: "Registered",
+            invoiceRefNo: "SI-0001",
+            scenarioId: "SN018",
+            currency: "PKR",
+            items: [
+              {
+                itemSNo: "1",
+                hsCode: "9804.0000",
+                productDescription: "SERVICES PROVIDED OR RENDERED FOR INLAND CARRIAGE OF GOODS",
+                rate: "15.00%",
+                uoM: "",
+                quantity: 1,
+                valueSalesExcludingST: 1000,
+                salesTaxApplicable: 150,
+                salesTaxWithheldAtSource: 0,
+                extraTax: 0,
+                furtherTax: 0,
+                totalValues: 1150,
+                discount: 0,
+                saleType: "Services"
+              }
+            ]
+          };
+          payloadBox.value = JSON.stringify(sample, null, 2);
+        } catch (e) {}
+      }
+    }
   }
 
   endpointButtons.forEach((button) => {
@@ -6099,7 +6223,8 @@ function initAPITesting() {
   })
 
   testApiBtn.addEventListener("click", async () => {
-    const activeEndpoint = document.querySelector(".endpoint-btn.active").dataset.endpoint
+    const activeEndpoint = document.querySelector(".endpoint-btn.active")?.dataset.endpoint || "provinces"
+    const isProduction = DOMElements.modeToggle?.checked
    
     testApiBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...'
     testApiBtn.disabled = true
@@ -6139,6 +6264,21 @@ function initAPITesting() {
         method = "POST"
         const Registration_No = document.getElementById("Registration_No").value
         body = JSON.stringify({ Registration_No: Registration_No })
+      } else if (activeEndpoint === "validateinvoicedata") {
+        method = "POST"
+        url = isProduction ? API_URLS.validate.production : API_URLS.validate.sandbox
+        const payloadText = document.getElementById("test_invoice_payload")?.value.trim()
+        body = payloadText || JSON.stringify(await getInvoicePayload())
+      } else if (activeEndpoint === "postinvoicedata") {
+        method = "POST"
+        url = isProduction ? API_URLS.submit.production : API_URLS.submit.sandbox
+        const payloadText = document.getElementById("test_invoice_payload")?.value.trim()
+        body = payloadText || JSON.stringify(await getInvoicePayload())
+      } else if (activeEndpoint === "getinvoicedata") {
+        method = "GET"
+        const base = isProduction ? API_URLS.invoiceStatus.production : API_URLS.invoiceStatus.sandbox
+        const invNo = document.getElementById("test_invoice_no")?.value.trim()
+        url = invNo ? `${base}?invoiceNumber=${encodeURIComponent(invNo)}` : base
       }
 
       const options = { method }
@@ -6813,7 +6953,8 @@ function getDateRanges() {
 // Filter invoices by date range
 function filterInvoicesByDateRange(invoices, startDate, endDate) {
   return invoices.filter(inv => {
-    const invDate = new Date(inv.dated || inv.invoiceDate || 0);
+    const rawDate = inv.invoiceDate || inv.dated || inv.invoicePayload?.invoiceDate || inv.createdAt || 0;
+    const invDate = new Date(rawDate);
     return invDate >= startDate && invDate <= endDate;
   });
 }
@@ -6876,20 +7017,32 @@ function updateTimeBasedAnalytics() {
 
 // Latest Invoices - Top 10 by date
 function updateLatestInvoices() {
-  const latest = globalInvoices
-    .sort((a, b) => new Date(b.dated || b.invoiceDate || 0) - new Date(a.dated || a.invoiceDate || 0))
+  const latest = [...globalInvoices]
+    .sort((a, b) => new Date(b.invoiceDate || b.dated || b.invoicePayload?.invoiceDate || b.createdAt || 0) - new Date(a.invoiceDate || a.dated || a.invoicePayload?.invoiceDate || a.createdAt || 0))
     .slice(0, 10);
   
   const container = document.getElementById('latestInvoices');
   if (!container) return;
   
+  if (latest.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding: 15px; color:#888;">No invoices in record</div>';
+    return;
+  }
+  
   container.innerHTML = latest.map(inv => {
-    const amount = parseFloat(inv.totalAmount) || calculateTotalFromLineItems(inv.items || inv.invoicePayload?.items || []);
-    const status = inv.invoiceNumber ? 'Submitted' : 'Draft';
+    let amount = parseFloat(inv.totalAmount) || 0;
+    if (amount === 0) {
+      amount = calculateTotalFromLineItems(inv.items || inv.invoicePayload?.items || []);
+    }
+    const isSub = inv.invoiceNumber || inv.fbrResponse?.invoiceNumber;
+    const status = isSub ? 'Submitted' : (inv.status || 'Draft');
+    const dateStr = formatDateForDisplay(inv.invoiceDate || inv.dated || inv.invoicePayload?.invoiceDate || inv.createdAt);
+    const refStr = inv.invoiceRefNo || inv.invoicePayload?.invoiceRefNo || `ID-${inv.id}`;
+    
     return `
-      <div class="invoice-item-grid">
-        <span class="grid-date">${formatDateForDisplay(inv.dated || inv.invoiceDate)}</span>
-        <span class="grid-ref">${inv.invoiceRefNo || inv.invoicePayload?.invoiceRefNo || 'N/A'}</span>
+      <div class="invoice-item-grid" style="cursor: pointer;" onclick="viewInvoice('${inv.id}')" title="Click to view invoice">
+        <span class="grid-date">${dateStr}</span>
+        <span class="grid-ref">${refStr}</span>
         <span class="grid-amount">PKR ${amount.toFixed(2)}</span>
         <span class="grid-status ${status.toLowerCase()}">${status}</span>
       </div>`;
@@ -7087,11 +7240,10 @@ async function populateTablesAndDashboard() {
   globalInvoices = await dbGetAll(STORE_NAMES.invoices);
   globalBuyers = await dbGetAll(STORE_NAMES.buyers);
 
-  // Check if there are no sellers, and if so, show the seller modal
+  // If no sellers exist, prompt seller modal
   if (globalSellers.length === 0) {
-    // Show the seller modal to add a new seller
     openAddSellerModal();
-    return; // Exit early to prevent further processing until a seller is added
+    return;
   }
 
   // Populate all tables
@@ -7158,6 +7310,14 @@ async function initApp() {
     
     updateLoaderStatus('Initializing components...');
     updateLoaderProgress(60);
+
+    // Check if database needs seeding on first run (empty database)
+    const existingSellers = await dbGetAll(STORE_NAMES.sellers);
+    const existingInvoices = await dbGetAll(STORE_NAMES.invoices);
+    if ((!existingSellers || existingSellers.length === 0) && (!existingInvoices || existingInvoices.length === 0)) {
+      updateLoaderStatus('Loading sample data from backup...');
+      await seedDatabaseFromBackup('fbr-invoice-backup-2025-08-26_17-27-15.json', false);
+    }
     
     // Load data and populate tables/dashboard
     await populateTablesAndDashboard();
@@ -7180,7 +7340,7 @@ async function initApp() {
     // Hide loader after a brief delay to show completion
     setTimeout(() => {
       hideLoader();
-    }, 300); // Reduced from 800ms to 300ms
+    }, 300);
 
     // Show success message when initialization is complete
     showToast("success", "System Ready", "FBR Digital Invoicing System initialized successfully");
@@ -7193,7 +7353,7 @@ async function initApp() {
     // Always force remove loader immediately on error
     setTimeout(() => {
       forceRemoveLoader();
-    }, 500); // Reduced timeout for error case
+    }, 500);
     
     showToast("error", "Initialization Error", "App loaded with some issues. Check console for details.");
   }
@@ -7486,6 +7646,41 @@ async function importDatabase(file) {
     showToast("error", "Import Failed", err.message);
   }
 }
+
+// Function to seed database from sample backup JSON
+async function seedDatabaseFromBackup(backupUrl = 'fbr-invoice-backup-2025-08-26_17-27-15.json', notify = true) {
+  try {
+    const res = await fetch(backupUrl);
+    if (!res.ok) throw new Error(`HTTP error ${res.status} when loading ${backupUrl}`);
+    const data = await res.json();
+    
+    for (const storeName of Object.values(STORE_NAMES)) {
+      if (data[storeName] && Array.isArray(data[storeName]) && data[storeName].length > 0) {
+        await dbSetAll(storeName, data[storeName]);
+      }
+    }
+    
+    // Clear active in-memory form items
+    items = [];
+    itemCounter = 0;
+    
+    // Refresh global in-memory stores and UI
+    await populateTablesAndDashboard();
+    
+    if (notify) {
+      showToast("success", "Sample Data Loaded", "Database populated with sample invoices, sellers, buyers, and products!");
+    }
+    console.log("✓ Sample database seeded successfully from", backupUrl);
+    return true;
+  } catch (err) {
+    console.error("Error seeding sample data:", err);
+    if (notify) {
+      showToast("error", "Seeding Failed", err.message);
+    }
+    return false;
+  }
+}
+window.seedDatabaseFromBackup = seedDatabaseFromBackup;
 
 // Console logging management
 let isConsoleLoggingEnabled = false;
@@ -8872,6 +9067,11 @@ window.STORE_NAMES = STORE_NAMES;
 window.exportData = exportData;
 window.formatDateForDisplay = formatDateForDisplay;
 window.showToast = showToast;
+window.renderInvoicePreview = renderInvoicePreview;
+window.generateInvoicePDF = generateInvoicePDF;
+window.exportDatabase = exportDatabase;
+window.importDatabase = importDatabase;
+window.seedDatabaseFromBackup = seedDatabaseFromBackup;
 
 // Expose table population functions for component integration
 window.populateInvoicesTable = populateInvoicesTable;
@@ -8898,7 +9098,163 @@ window.removeScenarioChip = removeScenarioChip;
 window.populateTablesAndDashboard = populateTablesAndDashboard;
 window.initAppComponents = initAppComponents;
 
-console.log('✓ Database functions exported globally for components');
+// Global Invoice Action Handlers
+window.viewInvoice = async function(invoiceId) {
+  try {
+    let invoice = await dbGet(STORE_NAMES.invoices, invoiceId);
+    if (!invoice) {
+      const all = await dbGetAll(STORE_NAMES.invoices);
+      invoice = all.find(inv => String(inv.id) === String(invoiceId) || inv.invoiceRefNo === invoiceId || inv.invoicePayload?.invoiceRefNo === invoiceId || inv.invoiceNumber === invoiceId || inv.fbrResponse?.invoiceNumber === invoiceId);
+    }
+    if (!invoice) {
+      showToast("error", "Not Found", `Invoice #${invoiceId} not found in database.`);
+      return;
+    }
+    window.currentInvoiceData = invoice;
+    renderInvoicePreview(invoice);
+  } catch (err) {
+    console.error("Error viewing invoice:", err);
+    showToast("error", "View Error", err.message || "Failed to view invoice");
+  }
+};
+
+window.editInvoice = async function(invoiceId) {
+  try {
+    let invoice = await dbGet(STORE_NAMES.invoices, invoiceId);
+    if (!invoice) {
+      const all = await dbGetAll(STORE_NAMES.invoices);
+      invoice = all.find(inv => String(inv.id) === String(invoiceId));
+    }
+    if (!invoice) {
+      showToast("error", "Not Found", `Invoice #${invoiceId} not found.`);
+      return;
+    }
+    await loadInvoiceIntoForm(invoice);
+    switchToCreateInvoiceTab();
+    showToast("info", "Edit Mode", `Loaded invoice ${invoice.invoiceRefNo || invoice.invoicePayload?.invoiceRefNo || invoice.id} for editing.`);
+  } catch (err) {
+    console.error("Error editing invoice:", err);
+    showToast("error", "Edit Error", err.message);
+  }
+};
+
+window.duplicateInvoice = async function(invoiceId) {
+  try {
+    let invoice = await dbGet(STORE_NAMES.invoices, invoiceId);
+    if (!invoice) {
+      const all = await dbGetAll(STORE_NAMES.invoices);
+      invoice = all.find(inv => String(inv.id) === String(invoiceId));
+    }
+    if (!invoice) {
+      showToast("error", "Not Found", `Invoice #${invoiceId} not found.`);
+      return;
+    }
+    const cloned = JSON.parse(JSON.stringify(invoice));
+    delete cloned.id;
+    if (cloned.invoicePayload) {
+      delete cloned.invoicePayload.invoiceNumber;
+    }
+    delete cloned.invoiceNumber;
+    delete cloned.fbrResponse;
+    currentEditingInvoice = null;
+    await loadInvoiceIntoForm(cloned);
+    switchToCreateInvoiceTab();
+    await updateInvoiceReference();
+    showToast("success", "Duplicated", `Cloned invoice into form. New reference assigned.`);
+  } catch (err) {
+    console.error("Error duplicating invoice:", err);
+    showToast("error", "Duplicate Error", err.message);
+  }
+};
+
+window.confirmDeleteInvoice = async function(invoiceId) {
+  if (!confirm(`Are you sure you want to delete invoice #${invoiceId}?`)) return;
+  try {
+    await dbDelete(STORE_NAMES.invoices, invoiceId);
+    await dbDelete(STORE_NAMES.invoices, parseInt(invoiceId) || invoiceId);
+    globalInvoices = await dbGetAll(STORE_NAMES.invoices);
+    await populateInvoicesTable();
+    updateDashboard();
+    showToast("success", "Deleted", `Invoice #${invoiceId} was deleted.`);
+  } catch (err) {
+    console.error("Error deleting invoice:", err);
+    showToast("error", "Delete Failed", err.message);
+  }
+};
+
+// Global Product Action Handlers
+window.editProduct = async function(productId) {
+  try {
+    const product = (await dbGet(STORE_NAMES.products, productId)) || globalProducts.find(p => String(p.id) === String(productId));
+    if (!product) return showToast("error", "Not Found", "Product not found");
+    const modal = document.getElementById('productModal');
+    if (modal) {
+      if (document.getElementById('productId')) document.getElementById('productId').value = product.id || '';
+      if (document.getElementById('productHSCode')) document.getElementById('productHSCode').value = product.hsCode || '';
+      if (document.getElementById('productName')) document.getElementById('productName').value = product.productName || '';
+      if (document.getElementById('productType')) document.getElementById('productType').value = product.productType || 'Goods';
+      if (document.getElementById('productUom')) document.getElementById('productUom').value = product.uom || '';
+      if (document.getElementById('productPurchaseRate')) document.getElementById('productPurchaseRate').value = product.purchaseRate || 0;
+      if (document.getElementById('productSaleRate')) document.getElementById('productSaleRate').value = product.saleRate || 0;
+      if (document.getElementById('productTaxRate')) document.getElementById('productTaxRate').value = product.taxRate || 0;
+      if (document.getElementById('productOpeningStock')) document.getElementById('productOpeningStock').value = product.openingStock || 0;
+      if (document.getElementById('productLowStock')) document.getElementById('productLowStock').value = product.lowStock || 0;
+      if (document.getElementById('productStatus')) document.getElementById('productStatus').value = product.status || 'Active';
+      modal.classList.add('active');
+    }
+  } catch (err) {
+    console.error("Error editing product:", err);
+  }
+};
+
+window.confirmDeleteProduct = async function(productId) {
+  if (!confirm(`Are you sure you want to delete this product?`)) return;
+  try {
+    await dbDelete(STORE_NAMES.products, productId);
+    await dbDelete(STORE_NAMES.products, parseInt(productId) || productId);
+    globalProducts = await dbGetAll(STORE_NAMES.products);
+    await populateProductsTable();
+    showToast("success", "Deleted", "Product deleted successfully");
+  } catch (err) {
+    showToast("error", "Delete Failed", err.message);
+  }
+};
+
+window.addProductToInvoiceFromTable = async function(productId) {
+  const product = globalProducts.find(p => String(p.id) === String(productId)) || (await dbGet(STORE_NAMES.products, productId));
+  if (!product) return showToast("error", "Not Found", "Product not found");
+  switchToCreateInvoiceTab();
+  const newItem = {
+    id: `item-${itemCounter++}`,
+    hsCode: product.hsCode || '',
+    description: product.productName || '',
+    serviceTypeId: 18,
+    saleType: product.productType && product.productType.toLowerCase().includes('service') ? 'Services' : 'Goods',
+    uom: product.uom || '',
+    quantity: 1,
+    unitPrice: parseFloat(product.saleRate) || 0,
+    taxRate: parseFloat(product.taxRate) || 18,
+    extraTax: 0,
+    furtherTax: 0,
+    discount: 0,
+    fedPayable: 0,
+    salesTaxWithheldAtSource: 0,
+    rateId: null,
+    sroSchedule: '',
+    sroItem: '',
+    uomOptions: product.uom ? [product.uom] : [],
+    taxRateOptions: product.taxRate ? [{ ratE_VALUE: product.taxRate, ratE_DESC: `${product.taxRate}%` }] : [],
+    sroScheduleOptions: [],
+    sroItemOptions: [],
+    annexureId: 3
+  };
+  items.push(newItem);
+  renderItems();
+  updateInvoiceTotal();
+  showToast("success", "Item Added", `Added ${product.productName} to invoice.`);
+};
+
+console.log('✓ Database functions and actions exported globally');
 console.log('✓ FBR Digital Invoicing App initialized successfully');
 
 // Test functions for modal functionality - can be called from console for testing

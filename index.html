@@ -54,6 +54,10 @@
         </div>
         
         <div class="header-controls">
+          <button type="button" class="btn btn-sm btn-outline-info" onclick="seedDatabaseFromBackup()" title="Load Sample Invoices, Sellers & Products" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: 1px solid #17a2b8; background: rgba(23, 162, 184, 0.1); color: inherit; cursor: pointer;">
+            <i class="fas fa-database text-info"></i> <span>Load Sample Data</span>
+          </button>
+          
           <div class="mode-toggle">
             <span class="mode-label">Sandbox</span>
             <label class="switch">
@@ -562,8 +566,7 @@
         <div class="endpoint-header">
           <h2><i class="fas fa-plug"></i> API Endpoints</h2>
         </div>
-        
-        <div class="endpoint-grid">
+                <div class="endpoint-grid">
           <div class="endpoint-btn active" data-endpoint="provinces">
             <i class="fas fa-map-marker-alt"></i> /provinces
           </div>
@@ -600,6 +603,15 @@
           <div class="endpoint-btn" data-endpoint="Get_Reg_Type">
             <i class="fas fa-address-card"></i> /Get_Reg_Type (POST)
           </div>
+          <div class="endpoint-btn" data-endpoint="validateinvoicedata">
+            <i class="fas fa-check-double"></i> /validateinvoicedata (POST)
+          </div>
+          <div class="endpoint-btn" data-endpoint="postinvoicedata">
+            <i class="fas fa-paper-plane"></i> /postinvoicedata (POST)
+          </div>
+          <div class="endpoint-btn" data-endpoint="getinvoicedata">
+            <i class="fas fa-search"></i> /getinvoicedata
+          </div>
         </div>
       </div>
       
@@ -619,10 +631,7 @@
           <div class="param-group" id="param-date_iso">
             <label for="date_iso"><i class="far fa-calendar"></i> Date Format: YYYY-MM-DD (e.g. 2025-03-25)</label>
             <input type="text" id="date_iso" value="2025-03-25">
-
           </div>
-
-         
           
           <div class="param-group" id="param-origination_supplier_csv">
             <label for="origination_supplier_csv"><i class="fas fa-users"></i> Supplier CSV</label>
@@ -659,15 +668,24 @@
             <input type="text" id="regno" value="7908224">
           </div>
           
-            <div class="param-group" id="param-post_date">
+          <div class="param-group" id="param-post_date">
             <label for="post_date"><i class="far fa-calendar-alt"></i> POST Date Format: YYYY-MM-DD (e.g. 2025-03-25)</label>
             <input type="text" id="post_date" value="2025-05-18">
           </div>
-         
           
           <div class="param-group" id="param-Registration_No">
             <label for="Registration_No"><i class="fas fa-id-card-alt"></i> Registration No (POST)</label>
             <input type="text" id="Registration_No" value="7908224">
+          </div>
+
+          <div class="param-group" id="param-invoice_no" style="flex: 1 1 100%;">
+            <label for="test_invoice_no"><i class="fas fa-receipt"></i> FBR Invoice Number / Ref</label>
+            <input type="text" id="test_invoice_no" placeholder="Enter FBR Invoice Number e.g. 7908224-20250721-SI0005" value="">
+          </div>
+
+          <div class="param-group" id="param-invoice_payload_json" style="flex: 1 1 100%;">
+            <label for="test_invoice_payload"><i class="fas fa-code"></i> Invoice JSON Payload (Sales / Debit / Credit)</label>
+            <textarea id="test_invoice_payload" rows="8" style="width: 100%; font-family: monospace; font-size: 0.8rem; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;" placeholder="Paste or edit invoice JSON payload..."></textarea>
           </div>
 
         </div>
@@ -979,6 +997,16 @@
               </button>
               <span id="importFileName" style="color: #666; font-size: 0.9rem;"></span>
             </div>
+          </div>
+          
+          <div class="form-section" style="margin-bottom: 30px;">
+            <h4 style="margin: 0 0 15px 0; color: #17a2b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;">
+              <i class="fas fa-database"></i> Sample Backup Data Seeder
+            </h4>
+            <p style="color: #666; margin-bottom: 15px;">Instantly seed the database with verified sample sellers, buyers, products, and submitted invoices from <code>fbr-invoice-backup-2025-08-26_17-27-15.json</code>.</p>
+            <button class="btn btn-primary" onclick="seedDatabaseFromBackup()">
+              <i class="fas fa-sync-alt"></i> Load Sample Data from Backup
+            </button>
           </div>
           
           <div class="form-section">
